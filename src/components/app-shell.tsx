@@ -25,13 +25,21 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { logoutAction } from "@/app/actions";
-import { can } from "@/lib/domain/rbac";
+import { can, type Permission } from "@/lib/domain/rbac";
 import type { Role } from "@/lib/domain/types";
+import { roleDashboardPath } from "@/lib/role-routes";
 import { cn } from "@/lib/utils";
 import { Badge, Button } from "./ui";
 
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  permission?: Permission;
+};
+
 const groups = [
-  { label: "Overview", items: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] },
+  { label: "Overview", items: [{ href: "ROLE_DASHBOARD", label: "Dashboard", icon: LayoutDashboard }] },
   {
     label: "Waste Operations",
     items: [
@@ -53,8 +61,8 @@ const groups = [
   {
     label: "Reports",
     items: [
-      { href: "/reports/impact", label: "Impact", icon: BarChart3 },
-      { href: "/reports/sustainability", label: "Sustainability", icon: FileText },
+      { href: "/reports/impact", label: "Impact", icon: BarChart3, permission: "view_reports" as const },
+      { href: "/reports/sustainability", label: "Sustainability", icon: FileText, permission: "view_reports" as const },
     ],
   },
   {
@@ -69,6 +77,10 @@ const groups = [
   },
 ];
 
+function resolveHref(href: string, role: Role) {
+  return href === "ROLE_DASHBOARD" ? roleDashboardPath(role) : href;
+}
+
 function NavContent({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
@@ -80,13 +92,14 @@ function NavContent({ role, onNavigate }: { role: Role; onNavigate?: () => void 
           <div key={group.label}>
             <p className="mb-2 px-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{group.label}</p>
             <div className="grid gap-1">
-              {items.map((item) => {
+              {items.map((item: NavItem) => {
                 const Icon = item.icon;
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const href = resolveHref(item.href, role);
+                const active = pathname === href || pathname.startsWith(`${href}/`);
                 return (
                   <Link
-                    key={item.href}
-                    href={item.href}
+                    key={href}
+                    href={href}
                     onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-200 hover:bg-white/10 hover:text-white",
@@ -118,11 +131,12 @@ export function AppShell({
   organisationName?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const dashboardHref = roleDashboardPath(role);
   return (
     <div className="min-h-screen bg-[#f6f8f5]">
       <aside className="no-print fixed inset-y-0 left-0 hidden w-72 border-r border-slate-200 bg-[var(--orbit-secondary)] text-white lg:block">
         <div className="flex h-full flex-col">
-          <Link href="/dashboard" className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
+          <Link href={dashboardHref} className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
             <span className="grid h-10 w-10 place-items-center rounded-md bg-amber-400 text-slate-950">
               <Recycle size={22} aria-hidden />
             </span>
@@ -161,7 +175,7 @@ export function AppShell({
           <button className="absolute inset-0 bg-slate-950/40" aria-label="Close navigation" onClick={() => setOpen(false)} />
           <div className="relative h-full w-[min(360px,88vw)] overflow-y-auto bg-[var(--orbit-secondary)] p-4 text-white">
             <div className="mb-5 flex items-center justify-between">
-              <Link href="/dashboard" className="flex items-center gap-2 font-bold"><Recycle size={22} /> ORBIT</Link>
+              <Link href={dashboardHref} className="flex items-center gap-2 font-bold"><Recycle size={22} /> ORBIT</Link>
               <button className="grid h-10 w-10 place-items-center rounded-md border border-white/20" onClick={() => setOpen(false)} aria-label="Close navigation">
                 <X size={20} aria-hidden />
               </button>

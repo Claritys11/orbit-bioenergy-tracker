@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { assertPermission, type Permission } from "@/lib/domain/rbac";
+import { can, type Permission } from "@/lib/domain/rbac";
 import type { Role } from "@/lib/domain/types";
 
 export async function requireUser(permission?: Permission) {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (permission) assertPermission(session.user.role as Role, permission);
+  if (permission && !can(session.user.role as Role, permission)) redirect("/not-authorized");
   return session.user;
 }

@@ -1,4 +1,5 @@
 import { Card, LinkButton, PageHeader } from "@/components/ui";
+import { roleDashboardPath } from "@/lib/role-routes";
 import { requireUser } from "@/lib/services/authz";
 
 const steps = [
@@ -22,7 +23,7 @@ export default async function OnboardingPage() {
             </li>
           ))}
         </ol>
-        <LinkButton href="/dashboard" className="mt-5">Continue to dashboard</LinkButton>
+        <LinkButton href={roleDashboardPath(user.role)} className="mt-5">Continue to dashboard</LinkButton>
       </Card>
     </div>
   );

@@ -47,8 +47,39 @@ test.describe("ORBIT private workspace", () => {
     await page.getByLabel("Email").fill("operator@orbit.test");
     await page.getByLabel("Password").fill("OrbitDemo2026!");
     await page.getByRole("button", { name: "Log in" }).click();
-    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page).toHaveURL(/\/operator\/dashboard/);
     await expect(page.getByRole("heading", { name: "Operator Dashboard" })).toBeVisible();
     await expect(page.getByText("Incoming feedstock and inspections")).toBeVisible();
+    const openNav = page.getByRole("button", { name: "Open navigation" });
+    if (await openNav.isVisible()) await openNav.click();
+    await expect(page.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/operator/dashboard");
+  });
+
+  test("legacy dashboard url redirects to the current role dashboard", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill("school@orbit.test");
+    await page.getByLabel("Password").fill("OrbitDemo2026!");
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page).toHaveURL(/\/school\/dashboard/);
+
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL(/\/school\/dashboard/);
+    await expect(page.getByRole("heading", { name: "School Admin Dashboard" })).toBeVisible();
+  });
+
+  test("role navigation hides forbidden operator features", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill("student@orbit.test");
+    await page.getByLabel("Password").fill("OrbitDemo2026!");
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page).toHaveURL(/\/student\/dashboard/);
+
+    await expect(page.getByRole("link", { name: "Pickups" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Conversion Cycles" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Impact" })).toHaveCount(0);
+
+    await page.goto("/operations/pickups");
+    await expect(page).toHaveURL(/\/not-authorized/);
+    await expect(page.getByRole("heading", { name: "Not authorized" })).toBeVisible();
   });
 });

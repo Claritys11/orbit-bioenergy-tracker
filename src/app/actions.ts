@@ -9,7 +9,8 @@ import { prisma } from "@/lib/db";
 import { calculateAllocations, calculateContribution } from "@/lib/domain/allocation";
 import { calculateContamination } from "@/lib/domain/contamination";
 import { assertBatchTransition } from "@/lib/domain/status";
-import type { AllocationPool } from "@/lib/domain/types";
+import type { AllocationPool, Role } from "@/lib/domain/types";
+import { roleDashboardPath } from "@/lib/role-routes";
 import { audit } from "@/lib/services/audit";
 import { requireUser } from "@/lib/services/authz";
 import { rateLimit } from "@/lib/services/rate-limit";
@@ -32,10 +33,14 @@ export async function loginAction(_: unknown, formData: FormData) {
   }
 
   try {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      select: { deletedAt: true, role: true },
+    });
     await signIn("credentials", {
       email,
       password: String(formData.get("password") ?? ""),
-      redirectTo: "/dashboard",
+      redirectTo: user && !user.deletedAt ? roleDashboardPath(user.role as Role) : "/dashboard",
     });
   } catch (error) {
     if (isRedirectError(error)) throw error;
