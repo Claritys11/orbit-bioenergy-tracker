@@ -1,22 +1,51 @@
+x-app-env: &app-env
+  DATABASE_URL: ${DATABASE_URL:?set-external-postgres-database-url}
+  AUTH_SECRET: ${AUTH_SECRET:?generate-with-openssl-rand-base64-32}
+  AUTH_URL: ${AUTH_URL:?set-to-your-public-https-url}
+  NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?set-to-your-public-https-url}
+
 services:
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *app-env
+    command:
+      - npm
+      - run
+      - db:deploy
+    restart: "no"
+
   orbit:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
       args:
         DATABASE_URL: ${DATABASE_URL}
         AUTH_SECRET: ${AUTH_SECRET}
         AUTH_URL: ${AUTH_URL}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    env_file:
+      - path: .env
+        required: false
     environment:
+      <<: *app-env
       NODE_ENV: production
+      HOSTNAME: 0.0.0.0
       PORT: 3115
-      DATABASE_URL: ${DATABASE_URL}
-      AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_URL: ${AUTH_URL}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     expose:
       - "3115"
+    ports:
+      - "127.0.0.1:${APP_PORT:-3115}:3115"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3115/login >/dev/null || exit 1"]
       interval: 30s

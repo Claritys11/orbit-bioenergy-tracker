@@ -156,19 +156,22 @@ Keep these available for both build and runtime. `docker-compose.yaml` passes th
 
 ### 4. Migrations
 
-Use one of these approaches.
+The `migrate` service in `docker-compose.yaml` runs automatically before the `orbit` service starts:
 
-Recommended manual first deploy:
+```bash
+npm run db:deploy
+```
+
+For first-time demo/judging data, run seed manually after deployment:
+
+```bash
+npm run db:seed
+```
+
+Manual production migration from your machine is still possible:
 
 ```bash
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public" npx prisma migrate deploy
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public" npx prisma db seed
-```
-
-Or run a one-off command in the Coolify app shell after env is set:
-
-```bash
-npx prisma migrate deploy
 ```
 
 Only add seed as a one-time manual command for demo environments.
@@ -184,8 +187,9 @@ Only add seed as a one-time manual command for demo environments.
 
 - Use Docker Compose deployment and select `docker-compose.yaml`.
 - `docker-compose.yaml` only defines the ORBIT app service. It does not start PostgreSQL.
-- The Docker container listens on port `3115`.
-- `docker-compose.yaml` intentionally uses `expose`, not `ports`, so it does not bind `localhost:3115` on the host. Open the app through the Coolify domain/proxy.
+- The Docker container listens on port `3115` and binds host loopback `127.0.0.1:${APP_PORT:-3115}:3115` for Coolify's proxy.
+- The Next.js server is forced to bind `0.0.0.0`, so random container hostnames in logs are not used as the app binding host.
+- Open the app through the Coolify domain/proxy. `localhost` only means the VPS/container side, not your laptop.
 - If the app shows database errors, verify `DATABASE_URL`; do not use `localhost` unless PostgreSQL is inside the same app container.
 - If env changes do not apply, redeploy the application.
 
