@@ -116,28 +116,28 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public" npx p
 - If login redirects incorrectly, check that `AUTH_URL` and `NEXT_PUBLIC_APP_URL` match the deployed URL.
 - If database connections are unstable, use a pooled connection string from your database provider.
 
-## Option B: Coolify
+## Option B: Coolify With Docker Compose
 
-Coolify is a good option if you want the app and database on your own VPS. This repo includes a Dockerfile, so the recommended path is Dockerfile deployment plus a separate Coolify PostgreSQL resource.
+Coolify is a good option if you want the app on your own VPS. This repo includes `docker-compose.yaml` for app-only deployment. The database is intentionally separate, so `DATABASE_URL` must point to your external PostgreSQL database.
 
-### 1. Create PostgreSQL Resource
+### 1. Prepare External PostgreSQL
 
-1. Open Coolify.
-2. Create or select a Project and Environment.
-3. Add a new **PostgreSQL** database resource.
-4. Start the database.
-5. Copy the internal connection string for app-to-database traffic.
+Use any PostgreSQL provider or a separate Coolify database resource. Copy its connection string:
 
-The internal host is preferred because the app and database run inside Coolify networking.
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+```
+
+If the database is another Coolify resource in the same project/network, use its internal hostname. If it is managed externally, use the provider hostname and make sure the VPS can reach it.
 
 ### 2. Create Application
 
 1. Add a new Application from GitHub.
 2. Select `Claritys11/orbit-bioenergy-tracker`.
 3. Branch: `main`.
-4. Build Pack: **Dockerfile**.
+4. Build Pack: **Docker Compose**.
 5. Base Directory: `/`.
-6. Dockerfile Location: `/Dockerfile`.
+6. Docker Compose File: `docker-compose.yaml`.
 7. Port / Ports Exposes: `3000`.
 8. Static site: disabled.
 
@@ -152,7 +152,7 @@ AUTH_URL="https://your-coolify-domain.com"
 NEXT_PUBLIC_APP_URL="https://your-coolify-domain.com"
 ```
 
-Keep these available for both build and runtime. Coolify enables both by default for new variables.
+Keep these available for both build and runtime. `docker-compose.yaml` passes the same variables as Docker build args and runtime environment variables.
 
 ### 4. Migrations
 
@@ -165,7 +165,7 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public" npx p
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public" npx prisma db seed
 ```
 
-Or set a Coolify post-deployment command:
+Or run a one-off command in the Coolify app shell after env is set:
 
 ```bash
 npx prisma migrate deploy
@@ -182,9 +182,10 @@ Only add seed as a one-time manual command for demo environments.
 
 ### Coolify Notes
 
-- Use Dockerfile deployment for this repo because `next.config.ts` outputs a standalone Next.js server.
+- Use Docker Compose deployment and select `docker-compose.yaml`.
+- `docker-compose.yaml` only defines the ORBIT app service. It does not start PostgreSQL.
 - The Docker container listens on port `3000`.
-- If the app shows database errors, verify the `DATABASE_URL` uses the Coolify internal database hostname, not `localhost`.
+- If the app shows database errors, verify `DATABASE_URL`; do not use `localhost` unless PostgreSQL is inside the same app container.
 - If env changes do not apply, redeploy the application.
 
 ## Quick Decision
@@ -192,4 +193,3 @@ Only add seed as a one-time manual command for demo environments.
 Choose Vercel if you want the fastest public URL and less server maintenance.
 
 Choose Coolify if you want more control, easier self-hosted database colocation, and VPS ownership.
-
