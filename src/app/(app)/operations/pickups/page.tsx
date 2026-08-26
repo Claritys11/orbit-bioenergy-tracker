@@ -38,7 +38,7 @@ export default async function PickupsPage() {
               <div key={pickup.id} className="rounded-md border border-slate-200 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-teal-800">{pickup.batch.batchCode}</p>
+                    <p className="font-semibold text-[var(--orbit-primary)]">{pickup.batch.batchCode}</p>
                     <p className="text-sm text-slate-500">{pickup.batch.sourceOrganisation.name} - {humanise(pickup.status)}</p>
                   </div>
                   {(pickup.batch.status === "PICKUP_SCHEDULED" || pickup.batch.status === "IN_TRANSIT") ? (

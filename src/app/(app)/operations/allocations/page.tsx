@@ -29,7 +29,7 @@ export default async function AllocationsPage() {
               <tbody className="divide-y divide-slate-100">
                 {allocations.map((allocation) => (
                   <tr key={allocation.id}>
-                    <td className="py-3 font-semibold text-teal-800">{allocation.cycle.cycleCode}</td>
+                    <td className="py-3 font-semibold text-[var(--orbit-primary)]">{allocation.cycle.cycleCode}</td>
                     <td>{allocation.pool}</td>
                     <td>{allocation.version}</td>
                     <td><Badge tone="green">{allocation.status}</Badge></td>

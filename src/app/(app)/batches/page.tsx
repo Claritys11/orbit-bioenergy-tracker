@@ -38,7 +38,7 @@ export default async function BatchesPage() {
               {batches.map((batch) => (
                 <tr key={batch.id}>
                   <td className="py-3">
-                    <Link className="font-semibold text-teal-800" href={`/batches/${batch.id}`}>
+                    <Link className="font-semibold text-[var(--orbit-primary)]" href={`/batches/${batch.id}`}>
                       {batch.batchCode}
                     </Link>
                   </td>

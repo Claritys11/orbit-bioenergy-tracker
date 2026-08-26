@@ -8,9 +8,9 @@ import { Button, Card, Field } from "@/components/ui";
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, null);
   return (
-    <main className="grid min-h-screen place-items-center bg-[#f6f8f5] px-4 py-10">
+    <main className="grid min-h-screen place-items-center bg-[var(--background)] px-4 py-10">
       <Card className="w-full max-w-md">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-700">ORBIT</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--orbit-primary)]">ORBIT</p>
         <h1 className="mt-2 text-3xl font-bold text-slate-950">Secure login</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           Use a demo account from the README. Login errors are intentionally generic.

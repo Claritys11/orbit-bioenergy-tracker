@@ -40,7 +40,7 @@ export default async function TracePage({ params }: { params: Promise<{ token: s
         <Card>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-700">Safe ORBIT Trace</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--orbit-primary)]">Safe ORBIT Trace</p>
               {batch ? <h1 className="mt-2 text-4xl font-bold text-slate-950">{batch.batchCode}</h1> : null}
             </div>
             <ConfidenceBadge value="Simulated Demo" />

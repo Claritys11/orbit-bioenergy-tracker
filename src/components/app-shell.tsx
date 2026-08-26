@@ -133,11 +133,11 @@ export function AppShell({
   const [open, setOpen] = useState(false);
   const dashboardHref = roleDashboardPath(role);
   return (
-    <div className="min-h-screen bg-[#f6f8f5]">
+    <div className="min-h-screen bg-[var(--background)]">
       <aside className="no-print fixed inset-y-0 left-0 hidden w-72 border-r border-slate-200 bg-[var(--orbit-secondary)] text-white lg:block">
         <div className="flex h-full flex-col">
           <Link href={dashboardHref} className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
-            <span className="grid h-10 w-10 place-items-center rounded-md bg-amber-400 text-slate-950">
+            <span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--orbit-energy)] text-black">
               <Recycle size={22} aria-hidden />
             </span>
             <span><span className="block text-lg font-bold">ORBIT</span><span className="block text-xs text-slate-300">Operational workspace</span></span>

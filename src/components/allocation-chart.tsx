@@ -2,7 +2,7 @@
 
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
-const colors = ["#0f766e", "#f59e0b", "#1e293b", "#64748b"];
+const colors = ["#000FC4", "#7209B7", "#00C972", "#000000"];
 
 export function AllocationChart({
   data,

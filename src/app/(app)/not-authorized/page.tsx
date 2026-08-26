@@ -13,7 +13,7 @@ export default async function NotAuthorizedPage() {
         action={<LinkButton href={roleDashboardPath(user.role)}>Back to my dashboard</LinkButton>}
       />
       <Card>
-        <ShieldAlert className="text-amber-600" />
+        <ShieldAlert className="text-[var(--orbit-secondary)]" />
         <h2 className="mt-3 text-lg font-bold text-slate-950">Role access boundary</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           ORBIT separates dashboards and operational tools by role, so users only see actions they are allowed to use.
@@ -22,4 +22,3 @@ export default async function NotAuthorizedPage() {
     </div>
   );
 }
-

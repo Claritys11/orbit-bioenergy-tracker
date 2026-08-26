@@ -39,7 +39,7 @@ export function QrScanner() {
       <div id="qr-reader" className="min-h-64 overflow-hidden rounded-md border border-slate-200" />
       {error ? <p className="mt-3 text-sm font-medium text-red-700">{error}</p> : null}
       {result ? (
-        <a href={result} className="mt-3 block break-all text-sm font-semibold text-teal-800">
+        <a href={result} className="mt-3 block break-all text-sm font-semibold text-[var(--orbit-primary)]">
           {result}
         </a>
       ) : null}

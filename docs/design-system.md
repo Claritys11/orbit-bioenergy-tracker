@@ -1,11 +1,11 @@
 # Design System
 
 ## Tokens
-- Primary: deep teal for circular operations.
-- Secondary: dark navy/slate for trust and navigation.
-- Energy accent: amber for verified energy and allocation.
-- Success: emerald. Warning: amber. Critical/rejected: red. Information: blue.
-- Background: warm off-white. Surface: white. Text: deep slate. Muted text: accessible slate.
+- Primary: `#000FC4` for core actions, links, and ORBIT identity.
+- Secondary: `#7209B7` for strong surfaces, partner/navigation contrast, and secondary emphasis.
+- Energy/success accent: `#00C972` for positive impact, verified energy, and completion states.
+- Surface: `#FFFFFF`. Foreground: `#000000`.
+- Error states may still use clear destructive styling when needed, but brand surfaces should come from the five-color palette above.
 
 ## Type
 Use strong public headings, compact operational headings, and readable 14-16px body copy. Do not scale type with viewport width.

@@ -20,7 +20,7 @@ export default function SourcesPage() {
                   <h2 className="mt-3 text-xl font-bold">{source.claim}</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{source.title} - {source.publisher}, {source.year}. Supports: {source.supports}</p>
                 </div>
-                <a href={source.href} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-teal-800">
+                <a href={source.href} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-[var(--orbit-primary)]">
                   Source <ExternalLink size={16} aria-hidden />
                 </a>
               </div>

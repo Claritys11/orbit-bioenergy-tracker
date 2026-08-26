@@ -46,8 +46,8 @@ export default async function ConversionsPage() {
           <h2 className="text-lg font-bold">Cycles</h2>
           <div className="mt-4 grid gap-3">
             {cycles.map((cycle) => (
-              <Link key={cycle.id} href={`/operations/conversions/${cycle.id}`} className="rounded-md border border-slate-200 p-4 hover:bg-teal-50">
-                <p className="font-semibold text-teal-800">{cycle.cycleCode}</p>
+              <Link key={cycle.id} href={`/operations/conversions/${cycle.id}`} className="rounded-md border border-slate-200 p-4 hover:bg-[var(--orbit-primary)]/8">
+                <p className="font-semibold text-[var(--orbit-primary)]">{cycle.cycleCode}</p>
                 <p className="text-sm text-slate-600">{cycle.facility.organisation.name}</p>
                 <p className="mt-2 text-sm">Verified {formatGas(cycle.verifiedGasM3)} - allocatable {formatGas(cycle.allocatableGasM3)}</p>
               </Link>

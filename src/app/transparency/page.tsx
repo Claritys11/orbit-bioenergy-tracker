@@ -24,7 +24,7 @@ export default async function TransparencyPage() {
   return (
     <>
       <PublicHeader />
-      <main id="main" className="bg-[#f6f8f5]">
+      <main id="main" className="bg-[var(--background)]">
         <section className="border-b border-slate-200 bg-white py-12">
           <div className="orbit-container">
             <Badge tone="amber">Demonstration dataset - not field-validated pilot results</Badge>

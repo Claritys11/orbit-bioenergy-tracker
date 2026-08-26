@@ -1,5 +1,6 @@
 import { Card, Metric, PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/db";
+import { buildReportBrief } from "@/lib/report-brief";
 import { requireUser } from "@/lib/services/authz";
 import { formatGas, formatKg } from "@/lib/utils";
 
@@ -18,6 +19,13 @@ export default async function SustainabilityPage() {
   const cost = accepted * ((assumption?.collectionCostPerKg ?? 0) + (assumption?.processingCostPerKg ?? 0)) + cycles.length * (assumption?.maintenanceCostPerCycle ?? 0);
   const fee = ((assumption?.platformFeePercent ?? 5) / 100) * (energySavings + wasteSavings);
   const net = energySavings + wasteSavings + digestateValue - cost - fee;
+  const rejected = inspections.reduce((sum, item) => sum + item.rejectedMassKg, 0);
+  const brief = buildReportBrief({
+    acceptedWasteKg: accepted,
+    rejectedWasteKg: rejected,
+    verifiedGasM3: verifiedGas,
+    estimatedNetBenefit: net,
+  });
   return (
     <div className="grid gap-6">
       <PageHeader title="Sustainability Report" description="Financial and LPG-equivalent values are pilot assumptions, not audited savings. The initial ORBIT fee is labelled as a 5% configurable assumption." />
@@ -32,6 +40,17 @@ export default async function SustainabilityPage() {
         <p className="mt-3 text-sm leading-6 text-slate-600">
           netBenefit = energySavings + wasteManagementSavings + validatedDigestateValue - collectionCost - processingCost - maintenanceCost - platformFee.
         </p>
+      </Card>
+      <Card>
+        <h2 className="text-lg font-bold">{brief.title}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{brief.note}</p>
+        <div className="mt-4 grid gap-3">
+          {brief.highlights.map((highlight) => (
+            <p key={highlight} className="rounded-md border border-[var(--orbit-border)] p-3 text-sm leading-6">
+              {highlight}
+            </p>
+          ))}
+        </div>
       </Card>
     </div>
   );

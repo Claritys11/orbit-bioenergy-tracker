@@ -39,7 +39,7 @@ export default async function FulfilmentPage() {
               const fulfilled = allocation.fulfilments.reduce((sum, item) => sum + item.volumeM3, 0);
               return (
                 <div key={allocation.id} className="rounded-md border border-slate-200 p-4">
-                  <p className="font-semibold text-teal-800">{allocation.cycle.cycleCode} - {allocation.pool}</p>
+                  <p className="font-semibold text-[var(--orbit-primary)]">{allocation.cycle.cycleCode} - {allocation.pool}</p>
                   <p className="text-sm text-slate-600">{formatGas(fulfilled)} fulfilled of {formatGas(allocation.allocatedGasM3)}</p>
                 </div>
               );

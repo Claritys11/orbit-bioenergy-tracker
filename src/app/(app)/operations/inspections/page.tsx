@@ -43,7 +43,7 @@ export default async function InspectionsPage() {
               <tbody className="divide-y divide-slate-100">
                 {recent.map((inspection) => (
                   <tr key={inspection.id}>
-                    <td className="py-3 font-semibold text-teal-800">{inspection.batch.batchCode}</td>
+                    <td className="py-3 font-semibold text-[var(--orbit-primary)]">{inspection.batch.batchCode}</td>
                     <td>{inspection.decision}</td>
                     <td>{formatKg(inspection.acceptedMassKg)}</td>
                     <td>{inspection.contaminationRate}%</td>

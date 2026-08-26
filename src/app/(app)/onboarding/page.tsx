@@ -19,7 +19,7 @@ export default async function OnboardingPage() {
         <ol className="mt-4 grid gap-3">
           {steps.map((step, index) => (
             <li key={step} className="rounded-md border border-slate-200 p-3 text-sm">
-              <span className="font-semibold text-teal-800">{index + 1}. </span>{step}
+              <span className="font-semibold text-[var(--orbit-primary)]">{index + 1}. </span>{step}
             </li>
           ))}
         </ol>

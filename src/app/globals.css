@@ -3,16 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #000000;
-  --orbit-primary: #000fc4;
+  --orbit-primary: #000FC4;
   --orbit-primary-dark: #000000;
-  --orbit-secondary: #7209b7;
-  --orbit-energy: #00c972;
-  --orbit-success: #00c972;
-  --orbit-warning: #7209b7;
+  --orbit-secondary: #7209B7;
+  --orbit-energy: #00C972;
+  --orbit-success: #00C972;
+  --orbit-warning: #7209B7;
   --orbit-critical: #000000;
-  --orbit-info: #000fc4;
+  --orbit-info: #000FC4;
   --orbit-surface: #ffffff;
-  --orbit-border: #000fc426;
+  --orbit-border: #000FC426;
   --orbit-muted: #000000a3;
 }
 
@@ -75,7 +75,7 @@ a,
 input,
 select,
 textarea {
-  outline-color: #000fc4;
+  outline-color: #000FC4;
 }
 
 @media print {

@@ -141,7 +141,7 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
       {user.role === "CANTEEN_STAFF" ? (
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
-            <QrCode className="text-teal-700" />
+            <QrCode className="text-[var(--orbit-primary)]" />
             <h2 className="mt-3 font-bold">Create the next QR batch</h2>
             <p className="mt-2 text-sm text-slate-600">Register only source-separated organics ready for pickup.</p>
             <LinkButton href="/batches/new" className="mt-4">
@@ -149,7 +149,7 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
             </LinkButton>
           </Card>
           <Card>
-            <Truck className="text-amber-600" />
+            <Truck className="text-[var(--orbit-secondary)]" />
             <h2 className="mt-3 font-bold">Waiting for pickup</h2>
             <p className="mt-2 text-2xl font-bold">{waitingPickup}</p>
             <p className="text-sm text-slate-600">Prepare covered bins and labels.</p>
@@ -166,7 +166,7 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
       {user.role === "STUDENT" ? (
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
-            <BookOpen className="text-teal-700" />
+            <BookOpen className="text-[var(--orbit-primary)]" />
             <h2 className="mt-3 font-bold">Follow the waste journey</h2>
             <p className="mt-2 text-sm text-slate-600">Scan permitted QR labels and learn how contamination changes outcomes.</p>
             <LinkButton href="/scan" className="mt-4">
@@ -174,7 +174,7 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
             </LinkButton>
           </Card>
           <Card>
-            <Zap className="text-amber-600" />
+            <Zap className="text-[var(--orbit-energy)]" />
             <h2 className="mt-3 font-bold">School energy impact</h2>
             <p className="mt-2 text-2xl font-bold">{formatGas(allocation)}</p>
             <p className="text-sm text-slate-600">Allocated energy is separate from delivered energy.</p>
@@ -190,12 +190,12 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
       {user.role === "SUPER_ADMIN" ? (
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
-            <Users className="text-teal-700" />
+            <Users className="text-[var(--orbit-primary)]" />
             <h2 className="mt-3 font-bold">Active organisations</h2>
             <p className="mt-2 text-2xl font-bold">{orgs.length}</p>
           </Card>
           <Card>
-            <ShieldAlert className="text-amber-600" />
+            <ShieldAlert className="text-[var(--orbit-secondary)]" />
             <h2 className="mt-3 font-bold">Unresolved warnings</h2>
             <p className="mt-2 text-2xl font-bold">{alerts.length}</p>
           </Card>
@@ -233,7 +233,7 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
                 <tbody className="divide-y divide-slate-100">
                   {batches.map((batch) => (
                     <tr key={batch.id}>
-                      <td className="py-3 font-semibold text-teal-800">{batch.batchCode}</td>
+                      <td className="py-3 font-semibold text-[var(--orbit-primary)]">{batch.batchCode}</td>
                       <td>{batch.sourceOrganisation.name}</td>
                       <td>{batch.category.name}</td>
                       <td>
@@ -263,4 +263,3 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
     </div>
   );
 }
-
