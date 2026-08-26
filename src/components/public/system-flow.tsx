@@ -11,7 +11,7 @@ const nodes = [
 
 export function SystemFlow() {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2 sm:gap-x-8">
       {nodes.map((node, index) => {
         const Icon = node.icon;
         return (
@@ -21,7 +21,7 @@ export function SystemFlow() {
             <p className="mt-1 text-xs leading-5 text-slate-500">{node.note}</p>
             {index % 2 === 0 ? (
               <ArrowRight
-                className="absolute -right-5 top-1/2 hidden text-amber-500 sm:block"
+                className="absolute -right-6 top-1/2 z-10 hidden -translate-y-1/2 text-[var(--orbit-energy)] sm:block"
                 size={20}
                 aria-hidden
               />
