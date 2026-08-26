@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f8f5;
-  --foreground: #10201c;
-  --orbit-primary: #0f766e;
-  --orbit-primary-dark: #115e59;
-  --orbit-secondary: #172033;
-  --orbit-energy: #f59e0b;
-  --orbit-success: #047857;
-  --orbit-warning: #b45309;
-  --orbit-critical: #b91c1c;
-  --orbit-info: #0369a1;
+  --background: #ffffff;
+  --foreground: #000000;
+  --orbit-primary: #000fc4;
+  --orbit-primary-dark: #000000;
+  --orbit-secondary: #7209b7;
+  --orbit-energy: #00c972;
+  --orbit-success: #00c972;
+  --orbit-warning: #7209b7;
+  --orbit-critical: #000000;
+  --orbit-info: #000fc4;
   --orbit-surface: #ffffff;
-  --orbit-border: #d8e2dc;
-  --orbit-muted: #526171;
+  --orbit-border: #000fc426;
+  --orbit-muted: #000000a3;
 }
 
 @theme inline {
@@ -75,7 +75,7 @@ a,
 input,
 select,
 textarea {
-  outline-color: #0f766e;
+  outline-color: #000fc4;
 }
 
 @media print {

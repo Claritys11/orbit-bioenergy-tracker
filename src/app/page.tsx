@@ -43,7 +43,7 @@ export default async function Home() {
   return (
     <>
       <PublicHeader />
-      <main id="main" className="bg-[#f6f8f5]">
+      <main id="main" className="bg-[var(--background)]">
         <section className="border-b border-[var(--orbit-border)] bg-white">
           <div className="orbit-container grid min-h-[82vh] gap-10 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
@@ -66,9 +66,9 @@ export default async function Home() {
                 <LinkButton href="#how-it-works" variant="secondary">See How It Works</LinkButton>
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-[#f8fbf7] p-5 shadow-sm">
+            <div className="rounded-lg border border-[var(--orbit-border)] bg-white p-5 shadow-sm">
               <SystemFlow />
-              <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+              <div className="mt-5 rounded-md border border-[var(--orbit-energy)]/35 bg-[var(--orbit-energy)]/10 p-4 text-sm leading-6 text-black">
                 The biodigester is not assumed to be installed at every school. ORBIT coordinates
                 source quality, logistics, partner conversion, verified measurement, and allocation.
               </div>
@@ -90,7 +90,7 @@ export default async function Home() {
         <section className="bg-[var(--orbit-secondary)] py-16 text-white">
           <div className="orbit-container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.16em] text-amber-300">Problem Background</p>
+              <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-energy)]">Problem Background</p>
               <h2 className="mt-3 text-4xl font-bold">Why Malang, why schools, why coordination?</h2>
               <p className="mt-4 leading-7 text-slate-300">
                 Malang City reported about 731.29 tonnes/day of waste in 2024, with organic waste
@@ -99,8 +99,8 @@ export default async function Home() {
                 integration gap.
               </p>
               <div className="mt-5 flex flex-wrap gap-3 text-sm">
-                <Link className="font-semibold text-amber-300" href="/sources">View claim sources</Link>
-                <Link className="font-semibold text-amber-300" href="/methodology">Read methodology</Link>
+                <Link className="font-semibold text-[var(--orbit-energy)]" href="/sources">View claim sources</Link>
+                <Link className="font-semibold text-[var(--orbit-energy)]" href="/methodology">Read methodology</Link>
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
@@ -124,7 +124,7 @@ export default async function Home() {
           <div className="mt-8 grid gap-4 md:grid-cols-4">
             {workflow.map(([title, body], index) => (
               <Card key={title} className="reveal-on-scroll">
-                <p className="text-sm font-bold text-amber-600">{String(index + 1).padStart(2, "0")}</p>
+                <p className="text-sm font-bold text-[var(--orbit-primary)]">{String(index + 1).padStart(2, "0")}</p>
                 <h3 className="mt-2 font-bold text-slate-950">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
               </Card>
@@ -191,7 +191,7 @@ export default async function Home() {
               <div className="mt-6 grid gap-3">
                 {[["Schools", "50%"], ["Partner operator", "30%"], ["Supporting contributors", "20%"]].map(([label, value]) => (
                   <div key={label} className="rounded-lg border border-slate-200 bg-white p-4">
-                    <div className="flex items-center justify-between"><span className="font-bold">{label}</span><span className="text-2xl font-bold text-amber-600">{value}</span></div>
+                    <div className="flex items-center justify-between"><span className="font-bold">{label}</span><span className="text-2xl font-bold text-[var(--orbit-secondary)]">{value}</span></div>
                   </div>
                 ))}
               </div>
@@ -219,7 +219,7 @@ export default async function Home() {
         <section className="bg-[var(--orbit-secondary)] py-16 text-white">
           <div className="orbit-container grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.16em] text-amber-300">Safety and Limitations</p>
+              <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-energy)]">Safety and Limitations</p>
               <h2 className="mt-3 text-4xl font-bold">Trust also means drawing hard boundaries.</h2>
               <p className="mt-4 leading-7 text-slate-300">
                 ORBIT does not replace trained operators, physical safety systems, or verified energy measurements. Low-pressure gas bags require engineering and legal validation.
@@ -228,7 +228,7 @@ export default async function Home() {
             <div className="grid gap-3">
               {["Students do not handle biodigesters, gas bags, valves, or hazardous machinery.", "Emergency shutdown requires local certified hardware.", "Compressed Bio-CNG and electricity generation are outside MVP.", "Current pilot numbers include assumptions or simulation data."].map((item) => (
                 <div key={item} className="flex gap-3 rounded-lg border border-white/10 bg-white/8 p-4">
-                  <ShieldCheck className="shrink-0 text-amber-300" size={20} aria-hidden />
+                  <ShieldCheck className="shrink-0 text-[var(--orbit-energy)]" size={20} aria-hidden />
                   <p className="text-sm leading-6">{item}</p>
                 </div>
               ))}

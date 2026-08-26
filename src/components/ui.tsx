@@ -13,10 +13,10 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-teal-700 disabled:cursor-not-allowed disabled:opacity-60",
-        variant === "primary" && "bg-teal-800 text-white hover:bg-teal-900",
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[var(--orbit-primary)] disabled:cursor-not-allowed disabled:opacity-60",
+        variant === "primary" && "bg-[var(--orbit-primary)] text-white hover:bg-[var(--orbit-secondary)]",
         variant === "secondary" && "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50",
-        variant === "ghost" && "text-slate-700 hover:bg-teal-50",
+        variant === "ghost" && "text-slate-700 hover:bg-[var(--orbit-primary)]/8",
         variant === "danger" && "bg-red-700 text-white hover:bg-red-800",
         className,
       )}
@@ -42,10 +42,10 @@ export function LinkButton({
     <Link
       href={href}
       className={cn(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-teal-700",
-        variant === "primary" && "bg-teal-800 text-white hover:bg-teal-900",
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[var(--orbit-primary)]",
+        variant === "primary" && "bg-[var(--orbit-primary)] text-white hover:bg-[var(--orbit-secondary)]",
         variant === "secondary" && "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50",
-        variant === "ghost" && "text-slate-700 hover:bg-teal-50",
+        variant === "ghost" && "text-slate-700 hover:bg-[var(--orbit-primary)]/8",
         className,
       )}
     >
@@ -70,10 +70,10 @@ export function Card({
 
 export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: string }) {
   const tones: Record<string, string> = {
-    green: "bg-emerald-50 text-emerald-800 ring-emerald-200",
-    amber: "bg-amber-50 text-amber-800 ring-amber-200",
+    green: "bg-[var(--orbit-energy)]/12 text-black ring-[var(--orbit-energy)]/35",
+    amber: "bg-[var(--orbit-secondary)]/8 text-[var(--orbit-secondary)] ring-[var(--orbit-secondary)]/20",
     red: "bg-red-50 text-red-800 ring-red-200",
-    blue: "bg-sky-50 text-sky-800 ring-sky-200",
+    blue: "bg-[var(--orbit-primary)]/8 text-[var(--orbit-primary)] ring-[var(--orbit-primary)]/20",
     slate: "bg-slate-100 text-slate-700 ring-slate-200",
   };
   return (
@@ -182,7 +182,7 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-end md:justify-between">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-teal-700">ORBIT</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--orbit-primary)]">ORBIT</p>
         <h1 className="mt-1 text-3xl font-bold tracking-normal text-slate-950">{title}</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{description}</p>
       </div>

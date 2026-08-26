@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { Menu, Recycle, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { LinkButton } from "@/components/ui";
 
@@ -14,10 +15,10 @@ const links = [
 ] as const;
 
 const accentClass = {
-  neutral: "text-slate-700 hover:bg-teal-50",
-  impact: "bg-teal-50 text-teal-800 ring-1 ring-teal-100 hover:bg-teal-100",
-  partners: "bg-amber-50 text-amber-800 ring-1 ring-amber-100 hover:bg-amber-100",
-  about: "bg-sky-50 text-sky-800 ring-1 ring-sky-100 hover:bg-sky-100",
+  neutral: "text-black hover:bg-[var(--orbit-primary)]/8",
+  impact: "bg-[var(--orbit-primary)]/8 text-[var(--orbit-primary)] ring-1 ring-[var(--orbit-primary)]/15 hover:bg-[var(--orbit-primary)]/12",
+  partners: "bg-[var(--orbit-secondary)]/8 text-[var(--orbit-secondary)] ring-1 ring-[var(--orbit-secondary)]/15 hover:bg-[var(--orbit-secondary)]/12",
+  about: "bg-[var(--orbit-energy)]/12 text-black ring-1 ring-[var(--orbit-energy)]/30 hover:bg-[var(--orbit-energy)]/18",
 };
 
 export function PublicHeader() {
@@ -27,8 +28,15 @@ export function PublicHeader() {
       <a href="#main" className="skip-link">Skip to content</a>
       <div className="orbit-container flex min-h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3 font-bold text-[var(--orbit-secondary)]">
-          <span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--orbit-primary)] text-white">
-            <Recycle size={22} aria-hidden />
+          <span className="relative h-10 w-[86px] overflow-hidden">
+            <Image
+              src="/Logo.png"
+              alt="ORBIT"
+              fill
+              sizes="86px"
+              className="object-contain object-left"
+              priority
+            />
           </span>
           <span>
             <span className="block leading-5">ORBIT</span>
