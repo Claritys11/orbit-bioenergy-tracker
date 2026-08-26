@@ -1,0 +1,563 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  SCHOOL_ADMIN
+  CANTEEN_STAFF
+  STUDENT
+  OPERATOR
+  COMMUNITY_PARTNER
+}
+
+enum OrganisationType {
+  SCHOOL
+  OPERATOR
+  COMMUNITY_PARTNER
+  SUPPORTING_CONTRIBUTOR
+  PLATFORM
+}
+
+enum BiodigesterStatus {
+  UNVERIFIED
+  NO_BIODIGESTER
+  BIODIGESTER_AVAILABLE
+  PILOT_PARTNER
+  INACTIVE
+}
+
+enum BatchStatus {
+  DRAFT
+  READY_FOR_PICKUP
+  PICKUP_SCHEDULED
+  IN_TRANSIT
+  DELIVERED
+  UNDER_INSPECTION
+  ACCEPTED
+  CONDITIONAL
+  REJECTED
+  PROCESSED
+  CLOSED
+}
+
+enum InspectionDecision {
+  ACCEPTED
+  CONDITIONAL
+  REJECTED
+}
+
+enum PickupStatus {
+  REQUESTED
+  SCHEDULED
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+}
+
+enum AllocationStatus {
+  SIMULATED
+  FINALISED
+  CORRECTED
+}
+
+enum FulfilmentStatus {
+  PENDING
+  SCHEDULED
+  DELIVERED_PHYSICALLY
+  CONSUMED_AT_HUB
+  PARTIALLY_FULFILLED
+  CANCELLED
+  ROLLED_OVER
+}
+
+enum DeliveryMode {
+  PIPED_BIOGAS
+  LOW_PRESSURE_GAS_BAG
+  ON_HUB_COMMUNITY_USAGE
+}
+
+enum MeasurementSource {
+  MANUAL
+  SENSOR_SIMULATED
+  SENSOR_VERIFIED
+}
+
+enum SafetySeverity {
+  NORMAL
+  WARNING
+  CRITICAL
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String
+  image         String?
+  role          Role
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  accounts      Account[]
+  sessions      Session[]
+  memberships   OrganisationMembership[]
+  batches       WasteBatch[]              @relation("ResponsibleUser")
+  inspections   ContaminationInspection[] @relation("Inspector")
+  auditLogs      AuditLog[]                @relation("ActorAudit")
+  notifications Notification[]
+
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Organisation {
+  id          String           @id @default(uuid())
+  name        String
+  type        OrganisationType
+  slug        String           @unique
+  address     String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  memberships OrganisationMembership[]
+  school      School?
+  facility    PartnerFacility?
+  canteens    Canteen[]
+  sources     WasteSource[]
+  batches     WasteBatch[]
+  contributor SupportingContributor?
+  auditLogs   AuditLog[]
+}
+
+model OrganisationMembership {
+  id             String   @id @default(uuid())
+  userId         String
+  organisationId String
+  role           Role
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organisationId, role])
+  @@index([organisationId, role])
+}
+
+model School {
+  id             String @id @default(uuid())
+  organisationId String @unique
+  educationLevel String
+  studentCount   Int
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model Canteen {
+  id             String @id @default(uuid())
+  organisationId String
+  name           String
+  managerName    String
+  storageLimitKg Float
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model PartnerFacility {
+  id                 String            @id @default(uuid())
+  organisationId     String            @unique
+  facilityType       String
+  capacityKgPerDay   Float
+  biodigesterStatus  BiodigesterStatus
+  energyMode         DeliveryMode
+  supportedFeedstock String[]
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  vehicles     Vehicle[]
+  cycles       ConversionCycle[]
+}
+
+model WasteSource {
+  id             String @id @default(uuid())
+  organisationId String
+  name           String
+  sourceType     String
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  batches      WasteBatch[]
+}
+
+model FeedstockCategory {
+  id              String  @id @default(uuid())
+  name            String  @unique
+  yieldFactor     Float
+  conditionFactor Float
+  description     String
+
+  batches WasteBatch[]
+}
+
+model WasteBatch {
+  id                    String      @id @default(uuid())
+  batchCode             String      @unique
+  qrToken               String      @unique
+  sourceOrganisationId  String
+  sourceId              String
+  categoryId            String
+  grossWeightKg         Float
+  collectionTimestamp   DateTime
+  responsibleUserId     String
+  storageStatus         String
+  pickupStatus          PickupStatus @default(REQUESTED)
+  status                BatchStatus  @default(DRAFT)
+  activityTimeline      Json
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  sourceOrganisation Organisation  @relation(fields: [sourceOrganisationId], references: [id])
+  source             WasteSource   @relation(fields: [sourceId], references: [id])
+  category           FeedstockCategory @relation(fields: [categoryId], references: [id])
+  responsibleUser    User          @relation("ResponsibleUser", fields: [responsibleUserId], references: [id])
+  photos             BatchPhoto[]
+  inspection         ContaminationInspection?
+  pickupRequest      PickupRequest?
+  pickup             Pickup?
+  conversionBatches  ConversionBatch[]
+  contributionScores ContributionScore[]
+
+  @@index([sourceOrganisationId, status])
+  @@index([qrToken])
+}
+
+model BatchPhoto {
+  id        String   @id @default(uuid())
+  batchId   String
+  url       String
+  caption   String?
+  createdAt DateTime @default(now())
+
+  batch WasteBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model ContaminationInspection {
+  id                    String             @id @default(uuid())
+  batchId               String             @unique
+  inspectorId           String
+  verifiedGrossMassKg   Float
+  rejectedMassKg        Float
+  contaminationRate     Float
+  acceptedMassKg        Float
+  contaminationCategories String[]
+  feedstockCondition    String
+  conditionFactor       Float
+  decision              InspectionDecision
+  notes                 String
+  photoUrls             String[]
+  createdAt             DateTime           @default(now())
+
+  batch     WasteBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  inspector User       @relation("Inspector", fields: [inspectorId], references: [id])
+}
+
+model PickupRequest {
+  id              String   @id @default(uuid())
+  batchId         String   @unique
+  requestedAt     DateTime @default(now())
+  thresholdReason String
+  maxStorageWarning Boolean @default(false)
+
+  batch WasteBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model Vehicle {
+  id         String @id @default(uuid())
+  facilityId String
+  plate      String @unique
+  label      String
+  capacityKg Float
+
+  facility PartnerFacility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  pickups  Pickup[]
+}
+
+model Pickup {
+  id             String       @id @default(uuid())
+  batchId        String       @unique
+  vehicleId      String?
+  operatorOrgId  String
+  scheduledAt    DateTime
+  completedAt    DateTime?
+  routeNotes     String
+  distanceKm     Float
+  status         PickupStatus
+  failedReason   String?
+
+  batch   WasteBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  vehicle Vehicle?   @relation(fields: [vehicleId], references: [id])
+}
+
+model ConversionCycle {
+  id                 String            @id @default(uuid())
+  facilityId         String
+  cycleCode          String            @unique
+  processingDate     DateTime
+  verifiedGasM3      Float
+  operationalUseM3   Float
+  safetyReserveM3    Float
+  allocatableGasM3   Float
+  digestateOutputKg  Float
+  measurementSource  MeasurementSource
+  notes              String
+  createdAt          DateTime          @default(now())
+
+  facility     PartnerFacility   @relation(fields: [facilityId], references: [id])
+  batches      ConversionBatch[]
+  measurements GasMeasurement[]
+  scores       ContributionScore[]
+  allocations  EnergyAllocation[]
+  digestate    DigestateRecord[]
+}
+
+model ConversionBatch {
+  id        String @id @default(uuid())
+  cycleId   String
+  batchId   String
+  massKg    Float
+
+  cycle ConversionCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  batch WasteBatch      @relation(fields: [batchId], references: [id])
+
+  @@unique([cycleId, batchId])
+}
+
+model GasMeasurement {
+  id        String            @id @default(uuid())
+  cycleId   String
+  volumeM3  Float
+  source    MeasurementSource
+  measuredAt DateTime
+  notes     String
+
+  cycle ConversionCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+}
+
+model AllocationConfiguration {
+  id                    String   @id @default(uuid())
+  version               Int      @unique
+  schoolPercent         Float
+  operatorPercent       Float
+  contributorPercent    Float
+  contaminationWarning  Float
+  contaminationReject   Float
+  orbitFeePercent       Float
+  active                Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  reason                String
+
+  allocations EnergyAllocation[]
+}
+
+model ContributionScore {
+  id                String @id @default(uuid())
+  cycleId           String
+  batchId           String
+  organisationId    String
+  pool              String
+  acceptedMassKg    Float
+  yieldFactor       Float
+  qualityFactor     Float
+  conditionFactor   Float
+  contributionScore Float
+  estimatedGasM3    Float
+
+  cycle ConversionCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  batch WasteBatch      @relation(fields: [batchId], references: [id])
+
+  @@unique([cycleId, batchId])
+  @@index([cycleId, pool])
+}
+
+model EnergyAllocation {
+  id              String           @id @default(uuid())
+  cycleId         String
+  configurationId String
+  recipientOrgId  String
+  pool            String
+  version         Int
+  status          AllocationStatus
+  allocatedGasM3  Float
+  scoreBasis      Float
+  finalisedAt     DateTime?
+  supersedesId    String?
+  notes           String
+
+  cycle         ConversionCycle          @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  configuration AllocationConfiguration @relation(fields: [configurationId], references: [id])
+  fulfilments   AllocationFulfilment[]
+
+  @@index([cycleId, status])
+  @@index([recipientOrgId])
+}
+
+model AllocationFulfilment {
+  id             String           @id @default(uuid())
+  allocationId   String
+  status         FulfilmentStatus
+  volumeM3       Float
+  recipientName  String
+  fulfilledAt    DateTime?
+  deliveryMode   DeliveryMode
+  proofUrl       String?
+  operatorName   String
+  notes          String
+
+  allocation EnergyAllocation @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+}
+
+model SupportingContributor {
+  id             String @id @default(uuid())
+  organisationId String @unique
+  contributorType String
+  contactName     String
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model DigestateRecord {
+  id            String   @id @default(uuid())
+  cycleId       String
+  outputKg      Float
+  distributedKg Float
+  recipient     String
+  valueEstimate Float
+  createdAt     DateTime @default(now())
+
+  cycle ConversionCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+}
+
+model FinancialAssumption {
+  id                       String   @id @default(uuid())
+  energyPricePerM3         Float
+  wasteSavingsPerKg        Float
+  digestateValuePerKg      Float
+  collectionCostPerKg      Float
+  processingCostPerKg      Float
+  maintenanceCostPerCycle  Float
+  platformFeePercent       Float
+  active                   Boolean  @default(true)
+  createdAt                DateTime @default(now())
+}
+
+model SafetyAlert {
+  id             String         @id @default(uuid())
+  facilityId     String
+  type           String
+  severity       SafetySeverity
+  message        String
+  simulated      Boolean        @default(true)
+  acknowledgedAt DateTime?
+  resolvedAt     DateTime?
+  createdAt      DateTime       @default(now())
+}
+
+model MaintenanceEvent {
+  id          String         @id @default(uuid())
+  facilityId  String
+  eventType   String
+  severity    SafetySeverity
+  dueAt       DateTime
+  completedAt DateTime?
+  notes       String
+}
+
+model SensorDevice {
+  id         String @id @default(uuid())
+  facilityId String
+  label      String
+  sensorType String
+  simulated  Boolean @default(true)
+
+  readings SensorReading[]
+}
+
+model SensorReading {
+  id        String   @id @default(uuid())
+  sensorId  String
+  value     Float
+  unit      String
+  readAt    DateTime @default(now())
+
+  sensor SensorDevice @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  actorId        String?
+  organisationId String?
+  action         String
+  entityType     String
+  entityId       String
+  before         Json?
+  after          Json?
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  actor        User?         @relation("ActorAudit", fields: [actorId], references: [id])
+  organisation Organisation? @relation(fields: [organisationId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

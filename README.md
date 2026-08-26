@@ -1,36 +1,150 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ORBIT
 
-## Getting Started
+Organic Recycling & Bioenergy Impact Tracker.
 
-First, run the development server:
+ORBIT is a production-minded competition prototype for a School-to-Community Bioenergy Loop. It coordinates waste registration, QR traceability, operator quality verification, pickup, conversion, verified gas records, purity-to-power allocation, fulfilment, sustainability reporting, safety monitoring, and audit logs.
+
+## Stack
+
+- Next.js App Router, TypeScript strict mode, Tailwind CSS
+- PostgreSQL and Prisma ORM
+- Auth.js credentials login with bcrypt password hashes
+- Zod validation and server-side RBAC
+- Recharts analytics, QR generation, browser QR scanning
+- Vitest unit tests and Playwright browser tests
+- Docker Compose for local PostgreSQL
+
+## Local Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Start PostgreSQL:
+
+```bash
+docker compose up -d
+```
+
+3. Create `.env` from `.env.example` and generate a local secret:
+
+```bash
+cp .env.example .env
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Put the generated value in `AUTH_SECRET`.
+
+4. Create tables and seed demo data:
+
+```bash
+npm run db:generate
+npm run db:migrate -- --name init
+npm run db:seed
+```
+
+5. Run the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo Credentials
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All demo accounts use `OrbitDemo2026!`.
 
-## Learn More
+| Role | Email |
+| --- | --- |
+| SUPER_ADMIN | `super@orbit.test` |
+| SCHOOL_ADMIN | `school@orbit.test` |
+| CANTEEN_STAFF | `canteen@orbit.test` |
+| STUDENT | `student@orbit.test` |
+| OPERATOR | `operator@orbit.test` |
+| COMMUNITY_PARTNER | `community@orbit.test` |
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+ORBIT is a modular monolith. Server components read operational data directly through Prisma. Mutations are server actions with Zod validation, RBAC checks, trusted recalculation, and audit logging. The core algorithm lives in isolated domain modules under `src/lib/domain` and is tested independently from the UI.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Important decisions:
 
-## Deploy on Vercel
+- QR payloads use opaque tokens and open safe public trace pages.
+- Estimated gas is calculated for contribution transparency only.
+- Allocation uses verified gas minus operational use and safety reserve.
+- Finalised allocations are not silently recalculated. Corrections should create a new version.
+- TPS3R/KSM biodigester capability is explicit through `BiodigesterStatus`.
+- ORBIT is monitoring software, not a physical safety controller.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Role Permissions
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Role | Main permissions |
+| --- | --- |
+| SUPER_ADMIN | system settings, organisations, global reports, audit, allocation config |
+| SCHOOL_ADMIN | school profile, reports, school users |
+| CANTEEN_STAFF | create QR waste batches, monitor pickup status |
+| STUDENT | safe traceability and educational impact only |
+| OPERATOR | pickup, inspection, conversion, allocation, fulfilment, safety |
+| COMMUNITY_PARTNER | approved allocation and impact reports |
+
+Permissions are enforced on the server in `src/lib/services/authz.ts` and `src/lib/domain/rbac.ts`.
+
+## Purity-to-Power Engine
+
+Inspection:
+
+```text
+contaminationRate = rejectedMass / verifiedGrossMass * 100
+acceptedMass = verifiedGrossMass - rejectedMass
+```
+
+Contribution:
+
+```text
+contributionScore =
+acceptedMass * yieldFactor * qualityFactor * conditionFactor
+```
+
+Estimated gas:
+
+```text
+estimatedGas = acceptedMass * yieldFactor * conditionFactor
+```
+
+Allocatable verified gas:
+
+```text
+allocatableGas = verifiedGas - operationalUse - safetyReserve
+```
+
+Demo allocation defaults are 50% schools, 30% operator, and 20% supporting contributors. The school pool must remain the largest, supporting contributors cannot exceed schools, and unused supporting allocation returns first to schools.
+
+## Commands
+
+```bash
+npm run dev
+npm run lint
+npm run typecheck
+npm run test
+npm run test:e2e
+npm run build
+npm run validate
+npm run db:generate
+npm run db:migrate -- --name init
+npm run db:seed
+```
+
+## Deployment
+
+Use a managed PostgreSQL database, set `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, and `NEXT_PUBLIC_APP_URL`, run Prisma migrations, then build and start the Next.js app.
+
+The included GitHub Actions workflow runs Prisma generation, migrations, lint, type-check, unit tests, and production build against a PostgreSQL service. Local Docker Compose maps PostgreSQL to host port `55432` to avoid colliding with an existing local database on `5432`.
+
+## Prototype Boundaries
+
+ORBIT does not implement real biodigester control, gas compression, Bio-CNG, PLN integration, blockchain, real financial transactions, or AI prediction. Sensor data may be simulated and is labelled as simulated. Safety-critical shutdowns must be handled by certified local hardware and trained adult operators.
+
+Financial values, LPG equivalents, yields, contamination thresholds, and the 5% ORBIT fee are pilot assumptions for demo validation.
