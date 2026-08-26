@@ -9,7 +9,7 @@ export default function SourcesPage() {
     <>
       <PublicHeader />
       <main id="main" className="orbit-container py-12">
-        <h1 className="text-5xl font-bold text-[var(--orbit-secondary)]">Sources and Claims</h1>
+        <h1 className="text-5xl font-bold text-[var(--orbit-primary)]">Sources and Claims</h1>
         <p className="mt-4 max-w-3xl leading-7 text-slate-600">Every important public claim is mapped to a source. ORBIT does not attach a citation to claims the source does not support.</p>
         <div className="mt-8 grid gap-4">
           {sourceClaims.map((source) => (

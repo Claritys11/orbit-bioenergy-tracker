@@ -14,7 +14,7 @@ export function Button({
     <button
       className={cn(
         "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[var(--orbit-primary)] disabled:cursor-not-allowed disabled:opacity-60",
-        variant === "primary" && "bg-[var(--orbit-primary)] text-white hover:bg-[var(--orbit-secondary)]",
+        variant === "primary" && "bg-[var(--orbit-primary)] text-white hover:bg-[var(--orbit-primary-dark)]",
         variant === "secondary" && "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50",
         variant === "ghost" && "text-slate-700 hover:bg-[var(--orbit-primary)]/8",
         variant === "danger" && "bg-red-700 text-white hover:bg-red-800",
@@ -43,7 +43,7 @@ export function LinkButton({
       href={href}
       className={cn(
         "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[var(--orbit-primary)]",
-        variant === "primary" && "bg-[var(--orbit-primary)] text-white hover:bg-[var(--orbit-secondary)]",
+        variant === "primary" && "bg-[var(--orbit-primary)] text-white hover:bg-[var(--orbit-primary-dark)]",
         variant === "secondary" && "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50",
         variant === "ghost" && "text-slate-700 hover:bg-[var(--orbit-primary)]/8",
         className,
@@ -71,7 +71,7 @@ export function Card({
 export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: string }) {
   const tones: Record<string, string> = {
     green: "bg-[var(--orbit-energy)]/12 text-black ring-[var(--orbit-energy)]/35",
-    amber: "bg-[var(--orbit-secondary)]/8 text-[var(--orbit-secondary)] ring-[var(--orbit-secondary)]/20",
+    amber: "bg-[var(--orbit-energy)]/12 text-black ring-[var(--orbit-energy)]/35",
     red: "bg-red-50 text-red-800 ring-red-200",
     blue: "bg-[var(--orbit-primary)]/8 text-[var(--orbit-primary)] ring-[var(--orbit-primary)]/20",
     slate: "bg-slate-100 text-slate-700 ring-slate-200",

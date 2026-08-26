@@ -2,7 +2,7 @@
 
 ## Tokens
 - Primary: `#000FC4` for core actions, links, and ORBIT identity.
-- Secondary: `#7209B7` for strong surfaces, partner/navigation contrast, and secondary emphasis.
+- Secondary: `#7209B7` for limited accent states only; public landing surfaces and headings should default to primary.
 - Energy/success accent: `#00C972` for positive impact, verified energy, and completion states.
 - Surface: `#FFFFFF`. Foreground: `#000000`.
 - Error states may still use clear destructive styling when needed, but brand surfaces should come from the five-color palette above.

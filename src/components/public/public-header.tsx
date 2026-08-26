@@ -17,8 +17,8 @@ const links = [
 const accentClass = {
   neutral: "text-black hover:bg-[var(--orbit-primary)]/8",
   impact: "bg-[var(--orbit-primary)]/8 text-[var(--orbit-primary)] ring-1 ring-[var(--orbit-primary)]/15 hover:bg-[var(--orbit-primary)]/12",
-  partners: "bg-[var(--orbit-secondary)]/8 text-[var(--orbit-secondary)] ring-1 ring-[var(--orbit-secondary)]/15 hover:bg-[var(--orbit-secondary)]/12",
-  about: "bg-[var(--orbit-energy)]/12 text-black ring-1 ring-[var(--orbit-energy)]/30 hover:bg-[var(--orbit-energy)]/18",
+  partners: "bg-[var(--orbit-energy)]/12 text-black ring-1 ring-[var(--orbit-energy)]/30 hover:bg-[var(--orbit-energy)]/18",
+  about: "bg-black/5 text-black ring-1 ring-black/10 hover:bg-black/8",
 };
 
 export function PublicHeader() {
@@ -27,7 +27,7 @@ export function PublicHeader() {
     <header className="sticky top-0 z-40 border-b border-[var(--orbit-border)] bg-white/95 backdrop-blur">
       <a href="#main" className="skip-link">Skip to content</a>
       <div className="orbit-container flex min-h-16 items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-3 font-bold text-[var(--orbit-secondary)]">
+        <Link href="/" className="flex items-center gap-3 font-bold text-[var(--orbit-primary)]">
           <span className="relative h-10 w-[86px] overflow-hidden">
             <Image
               src="/Logo.png"

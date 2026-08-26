@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-[var(--orbit-border)] bg-[var(--orbit-secondary)] text-white">
+    <footer className="border-t border-[var(--orbit-border)] bg-[var(--orbit-primary)] text-white">
       <div className="orbit-container grid gap-8 py-10 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
         <div>
           <p className="text-lg font-bold">ORBIT</p>

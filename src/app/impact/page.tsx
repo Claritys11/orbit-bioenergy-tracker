@@ -13,7 +13,7 @@ export default async function PublicImpactPage() {
     <>
       <PublicHeader />
       <main id="main" className="orbit-container py-12">
-        <h1 className="text-5xl font-bold text-[var(--orbit-secondary)]">Public Impact</h1>
+        <h1 className="text-5xl font-bold text-[var(--orbit-primary)]">Public Impact</h1>
         <p className="mt-4 max-w-3xl leading-7 text-slate-600">Impact is shown across environmental, energy, economic, social, and educational dimensions. Carbon reduction is not claimed without a validated baseline.</p>
         <div className="mt-8 grid gap-4 md:grid-cols-4">
           <PublicMetric label="Accepted organic waste" value={formatKg(data.metrics.acceptedWaste)} unit="measured at inspection" confidence="Measured" period={data.period} updated={data.lastUpdated} />

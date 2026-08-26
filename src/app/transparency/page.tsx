@@ -28,7 +28,7 @@ export default async function TransparencyPage() {
         <section className="border-b border-slate-200 bg-white py-12">
           <div className="orbit-container">
             <Badge tone="amber">Demonstration dataset - not field-validated pilot results</Badge>
-            <h1 className="mt-4 text-5xl font-bold text-[var(--orbit-secondary)]">Transparency Dashboard</h1>
+            <h1 className="mt-4 text-5xl font-bold text-[var(--orbit-primary)]">Transparency Dashboard</h1>
             <p className="mt-4 max-w-3xl leading-7 text-slate-600">
               Public-safe monitoring separates registered, accepted, verified, allocated, and fulfilled values.
               Private emails, exact routes, vehicle identifiers, raw safety detail, and audit diffs are not exposed.

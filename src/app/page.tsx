@@ -48,7 +48,7 @@ export default async function Home() {
           <div className="orbit-container grid min-h-[82vh] gap-10 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
               <Badge tone="amber">Demonstration dataset - awaiting field validation</Badge>
-              <h1 className="mt-5 max-w-4xl text-5xl font-bold tracking-normal text-[var(--orbit-secondary)] md:text-7xl">
+              <h1 className="mt-5 max-w-4xl text-5xl font-bold tracking-normal text-[var(--orbit-primary)] md:text-7xl">
                 Turning cleaner school waste into traceable community energy.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
@@ -78,7 +78,7 @@ export default async function Home() {
 
         <section id="overview" className="orbit-container py-16">
           <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-primary)]">Overview</p>
-          <h2 className="mt-3 max-w-3xl text-4xl font-bold text-[var(--orbit-secondary)]">A complete loop, not just a waste dashboard.</h2>
+          <h2 className="mt-3 max-w-3xl text-4xl font-bold text-[var(--orbit-primary)]">A complete loop, not just a waste dashboard.</h2>
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
             Schools act as waste sources and collection nodes. Validated community facilities
             perform conversion. Trained adults operate gas and biodigester equipment. Students
@@ -87,7 +87,7 @@ export default async function Home() {
           <div className="mt-8"><SystemFlow /></div>
         </section>
 
-        <section className="bg-[var(--orbit-secondary)] py-16 text-white">
+        <section className="bg-[var(--orbit-primary)] py-16 text-white">
           <div className="orbit-container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-energy)]">Problem Background</p>
@@ -120,7 +120,7 @@ export default async function Home() {
 
         <section id="how-it-works" className="orbit-container py-16">
           <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-primary)]">How It Works</p>
-          <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-secondary)]">Physical workflow and user workflow stay aligned.</h2>
+          <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-primary)]">Physical workflow and user workflow stay aligned.</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
             {workflow.map(([title, body], index) => (
               <Card key={title} className="reveal-on-scroll">
@@ -144,7 +144,7 @@ export default async function Home() {
           <div className="orbit-container grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-primary)]">Purity-to-Power</p>
-              <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-secondary)]">ORBIT rewards accepted feedstock, not unverified gross waste.</h2>
+              <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-primary)]">ORBIT rewards accepted feedstock, not unverified gross waste.</h2>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <Card><h3 className="font-bold">Batch A</h3><p className="mt-2 text-sm">20 kg gross, 1 kg rejected, 19 kg accepted. Lower contamination, higher contribution.</p></Card>
                 <Card><h3 className="font-bold">Batch B</h3><p className="mt-2 text-sm">20 kg gross, 6 kg rejected, 14 kg accepted. Higher contamination, lower contribution.</p></Card>
@@ -158,7 +158,7 @@ export default async function Home() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-primary)]">Live Impact Preview</p>
-              <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-secondary)]">Public-safe demonstration metrics.</h2>
+              <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-primary)]">Public-safe demonstration metrics.</h2>
               <p className="mt-3 text-sm text-slate-600">Demonstration dataset - not field-validated pilot results.</p>
             </div>
             <LinkButton href="/transparency">Open Full Live Impact Dashboard</LinkButton>
@@ -175,7 +175,7 @@ export default async function Home() {
           <div className="orbit-container grid gap-8 lg:grid-cols-2">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-primary)]">Transparency</p>
-              <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-secondary)]">Built to prevent misleading reporting.</h2>
+              <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-primary)]">Built to prevent misleading reporting.</h2>
               <div className="mt-6 grid gap-3">
                 {[
                   "Estimated gas is separated from verified gas.",
@@ -187,11 +187,11 @@ export default async function Home() {
             </div>
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-primary)]">Allocation Model</p>
-              <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-secondary)]">50 / 30 / 20 is a pilot assumption.</h2>
+              <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-primary)]">50 / 30 / 20 is a pilot assumption.</h2>
               <div className="mt-6 grid gap-3">
                 {[["Schools", "50%"], ["Partner operator", "30%"], ["Supporting contributors", "20%"]].map(([label, value]) => (
                   <div key={label} className="rounded-lg border border-slate-200 bg-white p-4">
-                    <div className="flex items-center justify-between"><span className="font-bold">{label}</span><span className="text-2xl font-bold text-[var(--orbit-secondary)]">{value}</span></div>
+                    <div className="flex items-center justify-between"><span className="font-bold">{label}</span><span className="text-2xl font-bold text-[var(--orbit-primary)]">{value}</span></div>
                   </div>
                 ))}
               </div>
@@ -204,7 +204,7 @@ export default async function Home() {
 
         <section id="partners" className="orbit-container py-16">
           <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-primary)]">Partners</p>
-          <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-secondary)]">Different roles, clear responsibilities.</h2>
+          <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-primary)]">Different roles, clear responsibilities.</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {partnerCards.map(({ Icon, title, body }) => (
               <Card key={title}>
@@ -216,7 +216,7 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="bg-[var(--orbit-secondary)] py-16 text-white">
+        <section className="bg-[var(--orbit-primary)] py-16 text-white">
           <div className="orbit-container grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-energy)]">Safety and Limitations</p>
@@ -237,7 +237,7 @@ export default async function Home() {
         </section>
 
         <section className="orbit-container py-16">
-          <h2 className="text-4xl font-bold text-[var(--orbit-secondary)]">FAQ</h2>
+          <h2 className="text-4xl font-bold text-[var(--orbit-primary)]">FAQ</h2>
           <div className="mt-6 grid gap-3 md:grid-cols-2">
             {[
               ["Is the biodigester installed at school?", "No. The school is a waste source and collection node unless a facility is separately validated."],
@@ -254,7 +254,7 @@ export default async function Home() {
 
         <section className="bg-white py-16">
           <div className="orbit-container text-center">
-            <h2 className="text-4xl font-bold text-[var(--orbit-secondary)]">Follow every verified step from cleaner organic waste to community energy.</h2>
+            <h2 className="text-4xl font-bold text-[var(--orbit-primary)]">Follow every verified step from cleaner organic waste to community energy.</h2>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <LinkButton href="/impact">Explore Public Impact</LinkButton>
               <LinkButton href="/login" variant="secondary">Sign In as a Partner</LinkButton>
