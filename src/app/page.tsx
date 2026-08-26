@@ -123,7 +123,7 @@ export default async function Home() {
           <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-secondary)]">Physical workflow and user workflow stay aligned.</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
             {workflow.map(([title, body], index) => (
-              <Card key={title}>
+              <Card key={title} className="reveal-on-scroll">
                 <p className="text-sm font-bold text-amber-600">{String(index + 1).padStart(2, "0")}</p>
                 <h3 className="mt-2 font-bold text-slate-950">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
@@ -132,7 +132,7 @@ export default async function Home() {
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
             {userSteps.map(([title, body]) => (
-              <Card key={title}>
+              <Card key={title} className="reveal-on-scroll">
                 <h3 className="font-bold">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
               </Card>
@@ -161,7 +161,7 @@ export default async function Home() {
               <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-secondary)]">Public-safe demonstration metrics.</h2>
               <p className="mt-3 text-sm text-slate-600">Demonstration dataset - not field-validated pilot results.</p>
             </div>
-            <LinkButton href="/transparency">Open Full Transparency Dashboard</LinkButton>
+            <LinkButton href="/transparency">Open Full Live Impact Dashboard</LinkButton>
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
             <PublicMetric label="Registered waste" value={formatKg(data.metrics.registeredWaste)} unit="gross waste" confidence="Simulated Demo" period={data.period} updated={data.lastUpdated} />
@@ -182,7 +182,7 @@ export default async function Home() {
                   "Rejected waste is not counted as accepted contribution.",
                   "Unfulfilled allocation is not counted as delivered energy.",
                   "Every critical change is recorded through an audit trail.",
-                ].map((item) => <Card key={item}><p className="font-semibold">{item}</p></Card>)}
+                ].map((item) => <Card key={item} className="reveal-on-scroll"><p className="font-semibold">{item}</p></Card>)}
               </div>
             </div>
             <div>

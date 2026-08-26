@@ -6,13 +6,19 @@ import { useState } from "react";
 import { LinkButton } from "@/components/ui";
 
 const links = [
-  { href: "/#overview", label: "Overview" },
-  { href: "/#how-it-works", label: "How It Works" },
-  { href: "/transparency", label: "Live Impact" },
-  { href: "/transparency", label: "Transparency" },
-  { href: "/partners", label: "Partners" },
-  { href: "/about", label: "About ORBIT" },
-];
+  { href: "/#overview", label: "Overview", accent: "neutral" },
+  { href: "/#how-it-works", label: "How It Works", accent: "neutral" },
+  { href: "/transparency", label: "Live Impact", accent: "impact" },
+  { href: "/partners", label: "Partners", accent: "partners" },
+  { href: "/about", label: "About ORBIT", accent: "about" },
+] as const;
+
+const accentClass = {
+  neutral: "text-slate-700 hover:bg-teal-50",
+  impact: "bg-teal-50 text-teal-800 ring-1 ring-teal-100 hover:bg-teal-100",
+  partners: "bg-amber-50 text-amber-800 ring-1 ring-amber-100 hover:bg-amber-100",
+  about: "bg-sky-50 text-sky-800 ring-1 ring-sky-100 hover:bg-sky-100",
+};
 
 export function PublicHeader() {
   const [open, setOpen] = useState(false);
@@ -33,7 +39,7 @@ export function PublicHeader() {
         </Link>
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Public navigation">
           {links.map((link) => (
-            <Link key={link.href + link.label} href={link.href} className="rounded-md px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-teal-50">
+            <Link key={link.href + link.label} href={link.href} className={`rounded-md px-3 py-2 text-sm font-semibold ${accentClass[link.accent]}`}>
               {link.label}
             </Link>
           ))}
@@ -54,7 +60,7 @@ export function PublicHeader() {
         <nav id="public-mobile-nav" className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden" aria-label="Mobile public navigation">
           <div className="grid gap-2">
             {links.map((link) => (
-              <Link key={link.href + link.label} href={link.href} className="rounded-md px-3 py-3 text-sm font-semibold text-slate-800" onClick={() => setOpen(false)}>
+              <Link key={link.href + link.label} href={link.href} className={`rounded-md px-3 py-3 text-sm font-semibold ${accentClass[link.accent]}`} onClick={() => setOpen(false)}>
                 {link.label}
               </Link>
             ))}

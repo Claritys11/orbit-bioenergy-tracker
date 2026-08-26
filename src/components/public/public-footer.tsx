@@ -14,7 +14,7 @@ export function PublicFooter() {
         <div>
           <p className="font-semibold">Public</p>
           <div className="mt-3 grid gap-2 text-sm text-slate-300">
-            <Link href="/transparency">Transparency</Link>
+            <Link href="/transparency">Live Impact</Link>
             <Link href="/impact">Impact</Link>
             <Link href="/methodology">Methodology</Link>
             <Link href="/sources">Sources</Link>
