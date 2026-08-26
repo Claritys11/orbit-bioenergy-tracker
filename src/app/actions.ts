@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
+import { AuthError } from "next-auth";
 import { signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/db";
 import { calculateAllocations, calculateContribution } from "@/lib/domain/allocation";
@@ -35,7 +37,9 @@ export async function loginAction(_: unknown, formData: FormData) {
       password: String(formData.get("password") ?? ""),
       redirectTo: "/dashboard",
     });
-  } catch {
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    if (error instanceof AuthError) return { error: "Invalid email or password." };
     return { error: "Invalid email or password." };
   }
 }

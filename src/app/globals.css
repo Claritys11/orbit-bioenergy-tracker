@@ -3,6 +3,17 @@
 :root {
   --background: #f6f8f5;
   --foreground: #10201c;
+  --orbit-primary: #0f766e;
+  --orbit-primary-dark: #115e59;
+  --orbit-secondary: #172033;
+  --orbit-energy: #f59e0b;
+  --orbit-success: #047857;
+  --orbit-warning: #b45309;
+  --orbit-critical: #b91c1c;
+  --orbit-info: #0369a1;
+  --orbit-surface: #ffffff;
+  --orbit-border: #d8e2dc;
+  --orbit-muted: #526171;
 }
 
 @theme inline {
@@ -16,6 +27,26 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.orbit-container {
+  width: min(1180px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -80px;
+  z-index: 100;
+  border-radius: 6px;
+  background: var(--orbit-secondary);
+  color: white;
+  padding: 10px 14px;
+}
+
+.skip-link:focus {
+  top: 16px;
 }
 
 button,
