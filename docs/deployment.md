@@ -138,7 +138,7 @@ If the database is another Coolify resource in the same project/network, use its
 4. Build Pack: **Docker Compose**.
 5. Base Directory: `/`.
 6. Docker Compose File: `docker-compose.yaml`.
-7. Port / Ports Exposes: `3000`.
+7. Port / Ports Exposes: `3115`.
 8. Static site: disabled.
 
 ### 3. Environment Variables
@@ -184,7 +184,7 @@ Only add seed as a one-time manual command for demo environments.
 
 - Use Docker Compose deployment and select `docker-compose.yaml`.
 - `docker-compose.yaml` only defines the ORBIT app service. It does not start PostgreSQL.
-- The Docker container listens on port `3000`.
+- The Docker container listens on port `3115`.
 - If the app shows database errors, verify `DATABASE_URL`; do not use `localhost` unless PostgreSQL is inside the same app container.
 - If env changes do not apply, redeploy the application.
 
