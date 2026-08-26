@@ -141,6 +141,8 @@ npm run db:seed
 
 Use a managed PostgreSQL database, set `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, and `NEXT_PUBLIC_APP_URL`, run Prisma migrations, then build and start the Next.js app.
 
+See [docs/deployment.md](docs/deployment.md) for step-by-step Vercel and Coolify setup, including build settings, environment variables, database migration, and demo seeding.
+
 The included GitHub Actions workflow runs Prisma generation, migrations, lint, type-check, unit tests, and production build against a PostgreSQL service. Local Docker Compose maps PostgreSQL to host port `55432` to avoid colliding with an existing local database on `5432`.
 
 ## Prototype Boundaries

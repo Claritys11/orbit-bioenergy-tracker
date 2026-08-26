@@ -1,0 +1,15 @@
+.git
+.next
+node_modules
+npm-debug.log*
+.env
+.env*
+.qa
+test-results
+coverage
+playwright-report
+.vercel
+.DS_Store
+*.pem
+*.tsbuildinfo
+
