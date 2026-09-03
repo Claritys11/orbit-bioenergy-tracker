@@ -1,16 +1,18 @@
-FROM node:22-alpine AS deps
+FROM node:22-alpine AS base
+
+FROM base AS deps
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-FROM node:22-alpine AS migrator
+FROM base AS migrator
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package*.json ./
 COPY prisma ./prisma
 CMD ["npm", "run", "db:deploy"]
 
-FROM node:22-alpine AS builder
+FROM base AS builder
 WORKDIR /app
 ARG DATABASE_URL
 ARG AUTH_SECRET
@@ -24,7 +26,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3115
