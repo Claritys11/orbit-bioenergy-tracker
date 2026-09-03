@@ -8,18 +8,21 @@ import { signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/db";
 import { calculateAllocations, calculateContribution } from "@/lib/domain/allocation";
 import { calculateContamination } from "@/lib/domain/contamination";
+import { assertContainerTransition } from "@/lib/domain/container";
 import { assertBatchTransition } from "@/lib/domain/status";
-import type { AllocationPool, Role } from "@/lib/domain/types";
+import type { AllocationPool, ContainerStatus, Role } from "@/lib/domain/types";
 import { roleDashboardPath } from "@/lib/role-routes";
 import { audit } from "@/lib/services/audit";
 import { requireUser } from "@/lib/services/authz";
 import { rateLimit } from "@/lib/services/rate-limit";
 import {
   batchFormSchema,
+  containerFormSchema,
   conversionFormSchema,
   fulfilmentFormSchema,
   inspectionFormSchema,
   pickupFormSchema,
+  quickBatchFromContainerSchema,
 } from "@/lib/validation";
 
 function token() {
@@ -141,6 +144,12 @@ export async function schedulePickupAction(_: unknown, formData: FormData) {
         ],
       },
     });
+    if (before.containerId) {
+      await tx.wasteContainer.update({
+        where: { id: before.containerId },
+        data: { status: "SCHEDULED" },
+      });
+    }
   });
 
   await audit({
@@ -175,6 +184,12 @@ export async function confirmDeliveryAction(batchId: string) {
       ],
     },
   });
+  if (before.containerId) {
+    await prisma.wasteContainer.update({
+      where: { id: before.containerId },
+      data: { status: target === "IN_TRANSIT" ? "IN_TRANSIT" : "AT_FACILITY" },
+    });
+  }
   revalidatePath("/operations/pickups");
   revalidatePath(`/batches/${batchId}`);
 }
@@ -204,6 +219,9 @@ export async function inspectBatchAction(_: unknown, formData: FormData) {
       where: { id: parsed.data.batchId },
       data: {
         status: result.decision,
+        verifiedGrossMassKg: parsed.data.verifiedGrossMassKg,
+        rejectedMassKg: parsed.data.rejectedMassKg,
+        acceptedMassKg: result.acceptedMassKg,
         activityTimeline: [
           ...(Array.isArray(before.activityTimeline) ? before.activityTimeline : []),
           { status: "UNDER_INSPECTION", at: new Date().toISOString(), actor: user.name },
@@ -211,6 +229,12 @@ export async function inspectBatchAction(_: unknown, formData: FormData) {
         ],
       },
     });
+    if (before.containerId) {
+      await tx.wasteContainer.update({
+        where: { id: before.containerId },
+        data: { status: "AVAILABLE" },
+      });
+    }
     await tx.contaminationInspection.upsert({
       where: { batchId: parsed.data.batchId },
       create: {
@@ -345,6 +369,12 @@ export async function createConversionAction(_: unknown, formData: FormData) {
         where: { id: batch.id },
         data: { status: "PROCESSED" },
       });
+      if (batch.containerId) {
+        await tx.wasteContainer.update({
+          where: { id: batch.containerId },
+          data: { status: "AVAILABLE" },
+        });
+      }
     }
     return created;
   });
@@ -457,4 +487,193 @@ export async function createFulfilmentAction(_: unknown, formData: FormData) {
 
 export async function createFulfilmentFormAction(formData: FormData) {
   await createFulfilmentAction(null, formData);
+}
+
+export async function createContainerAction(_: unknown, formData: FormData) {
+  const user = await requireUser("manage_containers");
+  const parsed = containerFormSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid container data." };
+
+  const org = await prisma.organisation.findUniqueOrThrow({
+    where: { id: parsed.data.organisationId },
+    select: { slug: true, name: true },
+  });
+
+  const slugPrefix = org.slug.replaceAll("-", "").slice(0, 6).toUpperCase();
+  const count = await prisma.wasteContainer.count({
+    where: { organisationId: parsed.data.organisationId },
+  });
+  const code = `CNT-${slugPrefix}-${String(count + 1).padStart(3, "0")}-${Math.floor(10 + Math.random() * 90)}`;
+  const qr = `CNT-QR-${token().slice(0, 12).toUpperCase()}`;
+
+  const container = await prisma.wasteContainer.create({
+    data: {
+      containerCode: code,
+      qrToken: qr,
+      organisationId: parsed.data.organisationId,
+      sourceId: parsed.data.sourceId,
+      categoryId: parsed.data.categoryId,
+      capacityKg: parsed.data.capacityKg,
+      notes: parsed.data.notes || undefined,
+      status: "AVAILABLE",
+    },
+  });
+
+  await audit({
+    actorId: user.id,
+    organisationId: user.organisationId,
+    action: "CONTAINER_ISSUED",
+    entityType: "WasteContainer",
+    entityId: container.id,
+    after: container,
+  });
+
+  revalidatePath("/admin/containers");
+  return { success: true, containerId: container.id, qrToken: container.qrToken };
+}
+
+export async function createContainerFormAction(formData: FormData) {
+  await createContainerAction(null, formData);
+}
+
+export async function updateContainerStatusAction(containerId: string, newStatus: ContainerStatus) {
+  const user = await requireUser("manage_containers");
+  const container = await prisma.wasteContainer.findUniqueOrThrow({ where: { id: containerId } });
+  assertContainerTransition(container.status as ContainerStatus, newStatus);
+
+  await prisma.wasteContainer.update({
+    where: { id: containerId },
+    data: { status: newStatus },
+  });
+
+  await audit({
+    actorId: user.id,
+    organisationId: user.organisationId,
+    action: "CONTAINER_STATUS_UPDATED",
+    entityType: "WasteContainer",
+    entityId: containerId,
+    before: { status: container.status },
+    after: { status: newStatus },
+  });
+
+  revalidatePath("/admin/containers");
+  revalidatePath(`/c/${container.qrToken}`);
+  return { success: true };
+}
+
+export async function revokeContainerAction(containerId: string, reason?: string) {
+  const user = await requireUser("manage_containers");
+  const container = await prisma.wasteContainer.findUniqueOrThrow({ where: { id: containerId } });
+
+  await prisma.wasteContainer.update({
+    where: { id: containerId },
+    data: { status: "REVOKED", isActive: false, notes: reason ? `Revoked: ${reason}` : "Container QR revoked" },
+  });
+
+  await audit({
+    actorId: user.id,
+    organisationId: user.organisationId,
+    action: "CONTAINER_REVOKED",
+    entityType: "WasteContainer",
+    entityId: containerId,
+    before: container,
+    after: { status: "REVOKED", isActive: false },
+    reason: reason || "Administrative revocation",
+  });
+
+  revalidatePath("/admin/containers");
+  revalidatePath(`/c/${container.qrToken}`);
+  return { success: true };
+}
+
+export async function createBatchFromContainerAction(_: unknown, formData: FormData) {
+  const user = await requireUser("create_batch");
+  const parsed = quickBatchFromContainerSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid batch input." };
+
+  const container = await prisma.wasteContainer.findUniqueOrThrow({
+    where: { id: parsed.data.containerId },
+    include: { organisation: true, source: true, category: true },
+  });
+
+  if (!container.isActive || container.status === "REVOKED") {
+    return { error: "This container has been revoked or deactivated." };
+  }
+
+  if (user.role !== "SUPER_ADMIN" && user.organisationId !== container.organisationId) {
+    return { error: "You are not authorized to submit batches for another organization's container." };
+  }
+
+  const activeBatch = await prisma.wasteBatch.findFirst({
+    where: {
+      containerId: container.id,
+      status: { notIn: ["PROCESSED", "CLOSED", "REJECTED"] },
+    },
+  });
+
+  if (activeBatch) {
+    return {
+      error: `Container already has an active batch (${activeBatch.batchCode}) in progress. Complete pickup & inspection before submitting a new batch.`,
+    };
+  }
+
+  const batchCode = `ORB-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+  const batch = await prisma.$transaction(async (tx) => {
+    const created = await tx.wasteBatch.create({
+      data: {
+        batchCode,
+        qrToken: token(),
+        containerId: container.id,
+        sourceOrganisationId: container.organisationId,
+        sourceId: container.sourceId,
+        categoryId: container.categoryId,
+        grossWeightKg: parsed.data.declaredMassKg,
+        declaredMassKg: parsed.data.declaredMassKg,
+        collectionTimestamp: new Date(),
+        responsibleUserId: user.id,
+        storageStatus: "Container Filled & Ready",
+        pickupStatus: "REQUESTED",
+        status: "READY_FOR_PICKUP",
+        activityTimeline: [
+          { status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: user.name },
+        ],
+        pickupRequest: {
+          create: {
+            thresholdReason:
+              parsed.data.declaredMassKg >= 25
+                ? "Volume threshold reached"
+                : "Manual pickup request via container scan",
+            maxStorageWarning: false,
+          },
+        },
+        photos: parsed.data.photoUrl ? { create: { url: parsed.data.photoUrl } } : undefined,
+      },
+    });
+
+    await tx.wasteContainer.update({
+      where: { id: container.id },
+      data: { status: "READY_FOR_PICKUP" },
+    });
+
+    return created;
+  });
+
+  await audit({
+    actorId: user.id,
+    organisationId: user.organisationId,
+    action: "BATCH_CREATED_FROM_CONTAINER",
+    entityType: "WasteBatch",
+    entityId: batch.id,
+    after: { batch, containerId: container.id },
+  });
+
+  revalidatePath(`/c/${container.qrToken}`);
+  revalidatePath("/batches");
+  revalidatePath("/canteen");
+  redirect(`/c/${container.qrToken}?submitted=true`);
+}
+
+export async function createBatchFromContainerFormAction(formData: FormData) {
+  await createBatchFromContainerAction(null, formData);
 }

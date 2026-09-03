@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "ORBIT | Organic Recycling & Bioenergy Impact Tracker",
   description:
     "Operational traceability for school-to-community organic recycling and verified bioenergy allocation.",
+  icons: {
+    icon: "/Logo.png",
+    shortcut: "/Logo.png",
+    apple: "/Logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

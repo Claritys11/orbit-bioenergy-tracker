@@ -195,11 +195,51 @@ async function main() {
     },
   });
 
+  const containerSchoolA = await prisma.wasteContainer.create({
+    data: {
+      containerCode: "CNT-SMK-001-01",
+      qrToken: "CNT-TELKOM-001-01",
+      organisationId: schoolA.id,
+      sourceId: schoolA.sources[0].id,
+      categoryId: categories[1].id,
+      capacityKg: 100,
+      status: "AVAILABLE",
+      notes: "Main Canteen — Food Preparation Waste",
+    },
+  });
+
+  const containerSchoolB = await prisma.wasteContainer.create({
+    data: {
+      containerCode: "CNT-SMK-001-02",
+      qrToken: "CNT-TELKOM-001-02",
+      organisationId: schoolB.id,
+      sourceId: schoolB.sources[0].id,
+      categoryId: categories[0].id,
+      capacityKg: 120,
+      status: "AVAILABLE",
+      notes: "Main Canteen — Plate Scraps & Leftovers",
+    },
+  });
+
+  const containerMarket = await prisma.wasteContainer.create({
+    data: {
+      containerCode: "CNT-PASAR-001-01",
+      qrToken: "CNT-PASAR-001-01",
+      organisationId: market.id,
+      sourceId: market.sources[0].id,
+      categoryId: categories[3].id,
+      capacityKg: 80,
+      status: "AVAILABLE",
+      notes: "Pasar Tunas — Vegetable & Produce Vendor Collective",
+    },
+  });
+
   const batchInputs = [
     {
       org: schoolA,
       source: schoolA.sources[0],
       category: categories[1],
+      container: containerSchoolA,
       user: canteenStaff,
       gross: 62,
       status: "ACCEPTED" as const,
@@ -211,6 +251,7 @@ async function main() {
       org: schoolB,
       source: schoolB.sources[0],
       category: categories[0],
+      container: containerSchoolB,
       user: schoolAdmin,
       gross: 44,
       status: "CONDITIONAL" as const,
@@ -222,6 +263,7 @@ async function main() {
       org: market,
       source: market.sources[0],
       category: categories[3],
+      container: containerMarket,
       user: partner,
       gross: 38,
       status: "ACCEPTED" as const,
@@ -233,6 +275,7 @@ async function main() {
       org: schoolA,
       source: schoolA.sources[0],
       category: categories[2],
+      container: containerSchoolA,
       user: canteenStaff,
       gross: 18,
       status: "REJECTED" as const,
@@ -254,10 +297,16 @@ async function main() {
       data: {
         batchCode: item.code,
         qrToken: crypto.randomUUID().replaceAll("-", ""),
+        containerId: item.container.id,
         sourceOrganisationId: item.org.id,
         sourceId: item.source.id,
         categoryId: item.category.id,
         grossWeightKg: item.gross,
+        declaredMassKg: item.gross,
+        collectedMassKg: item.gross,
+        verifiedGrossMassKg: item.gross,
+        rejectedMassKg: item.rejected,
+        acceptedMassKg: result.acceptedMassKg,
         collectionTimestamp: new Date("2026-08-20T02:30:00.000Z"),
         responsibleUserId: item.user.id,
         storageStatus: "Covered bin, labelled demo data",

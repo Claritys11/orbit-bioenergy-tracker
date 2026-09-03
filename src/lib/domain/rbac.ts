@@ -3,6 +3,8 @@ import type { Role } from "./types";
 export type Permission =
   | "manage_system"
   | "manage_org"
+  | "manage_containers"
+  | "issue_qr"
   | "create_batch"
   | "view_student"
   | "schedule_pickup"
@@ -18,6 +20,8 @@ const rolePermissions: Record<Role, Permission[]> = {
   SUPER_ADMIN: [
     "manage_system",
     "manage_org",
+    "manage_containers",
+    "issue_qr",
     "view_reports",
     "view_audit",
     "calculate_allocation",

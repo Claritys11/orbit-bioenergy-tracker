@@ -34,13 +34,21 @@ export function QrScanner() {
     }
   }
 
+  function resolveUrl(input: string) {
+    const trimmed = input.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return trimmed;
+    }
+    return `/c/${encodeURIComponent(trimmed)}`;
+  }
+
   return (
     <Card>
       <div id="qr-reader" className="min-h-64 overflow-hidden rounded-md border border-slate-200" />
       {error ? <p className="mt-3 text-sm font-medium text-red-700">{error}</p> : null}
       {result ? (
-        <a href={result} className="mt-3 block break-all text-sm font-semibold text-[var(--orbit-primary)]">
-          {result}
+        <a href={resolveUrl(result)} className="mt-3 block break-all text-sm font-semibold text-[var(--orbit-primary)]">
+          {resolveUrl(result)}
         </a>
       ) : null}
       <div className="mt-4 flex flex-wrap gap-3">
@@ -50,11 +58,11 @@ export function QrScanner() {
           onSubmit={(event) => {
             event.preventDefault();
             const value = new FormData(event.currentTarget).get("manual");
-            if (value) window.location.href = String(value);
+            if (value) window.location.href = resolveUrl(String(value));
           }}
         >
-          <Field label="Manual trace URL" name="manual" />
-          <Button className="self-end" variant="secondary">Open</Button>
+          <Field label="Manual Container ID or QR URL" name="manual" />
+          <Button className="self-end" variant="secondary">Scan / Open</Button>
         </form>
       </div>
     </Card>

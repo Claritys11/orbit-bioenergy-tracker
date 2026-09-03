@@ -43,6 +43,7 @@ const groups = [
   {
     label: "Waste Operations",
     items: [
+      { href: "/admin/containers", label: "QR Containers", icon: QrCode, permission: "manage_containers" as const },
       { href: "/batches", label: "Waste Batches", icon: QrCode },
       { href: "/batches/new", label: "Create Batch", icon: Recycle, permission: "create_batch" as const },
       { href: "/scan", label: "QR Scanner", icon: ScanLine },

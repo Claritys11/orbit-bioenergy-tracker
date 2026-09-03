@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calculateAllocations, calculateContribution } from "./allocation";
 import { calculateContamination } from "./contamination";
+import { canTransitionContainer } from "./container";
 import { can } from "./rbac";
 
 describe("contamination calculation", () => {
@@ -160,5 +161,56 @@ describe("permissions", () => {
   it("prevents students from editing operator inspections", () => {
     expect(can("STUDENT", "inspect_batch")).toBe(false);
     expect(can("OPERATOR", "inspect_batch")).toBe(true);
+  });
+
+  it("allows only SUPER_ADMIN to manage containers and issue QR", () => {
+    expect(can("SUPER_ADMIN", "manage_containers")).toBe(true);
+    expect(can("SUPER_ADMIN", "issue_qr")).toBe(true);
+    expect(can("CANTEEN_STAFF", "manage_containers")).toBe(false);
+    expect(can("SCHOOL_ADMIN", "manage_containers")).toBe(false);
+  });
+});
+
+describe("container lifecycle", () => {
+  it("allows valid container status transitions", () => {
+    expect(canTransitionContainer("AVAILABLE", "READY_FOR_PICKUP")).toBe(true);
+    expect(canTransitionContainer("READY_FOR_PICKUP", "SCHEDULED")).toBe(true);
+    expect(canTransitionContainer("SCHEDULED", "IN_TRANSIT")).toBe(true);
+    expect(canTransitionContainer("IN_TRANSIT", "AT_FACILITY")).toBe(true);
+    expect(canTransitionContainer("AT_FACILITY", "EMPTIED")).toBe(true);
+    expect(canTransitionContainer("EMPTIED", "AVAILABLE")).toBe(true);
+  });
+
+  it("rejects invalid container transitions", () => {
+    expect(canTransitionContainer("AVAILABLE", "IN_TRANSIT")).toBe(false);
+    expect(canTransitionContainer("EMPTIED", "IN_TRANSIT")).toBe(false);
+  });
+
+  it("supports sequential reuse of the same physical container for multiple batches", () => {
+    let containerStatus: import("./types").ContainerStatus = "AVAILABLE";
+    const history: string[] = [];
+
+    // Cycle 1: Batch #001
+    expect(canTransitionContainer(containerStatus, "READY_FOR_PICKUP")).toBe(true);
+    containerStatus = "READY_FOR_PICKUP";
+    containerStatus = "SCHEDULED";
+    containerStatus = "IN_TRANSIT";
+    containerStatus = "AT_FACILITY";
+    containerStatus = "EMPTIED";
+    containerStatus = "AVAILABLE"; // Container freed immediately upon inspection/emptying!
+    history.push("Batch #001 Processed");
+
+    // Cycle 2: Batch #002 using SAME container
+    expect(canTransitionContainer(containerStatus, "READY_FOR_PICKUP")).toBe(true);
+    containerStatus = "READY_FOR_PICKUP";
+    containerStatus = "SCHEDULED";
+    containerStatus = "IN_TRANSIT";
+    containerStatus = "AT_FACILITY";
+    containerStatus = "EMPTIED";
+    containerStatus = "AVAILABLE";
+    history.push("Batch #002 Processed");
+
+    expect(containerStatus).toBe("AVAILABLE");
+    expect(history.length).toBe(2);
   });
 });

@@ -19,6 +19,16 @@ export type BatchStatus =
   | "PROCESSED"
   | "CLOSED";
 
+export type ContainerStatus =
+  | "AVAILABLE"
+  | "READY_FOR_PICKUP"
+  | "SCHEDULED"
+  | "IN_TRANSIT"
+  | "AT_FACILITY"
+  | "EMPTIED"
+  | "REVOKED"
+  | "INACTIVE";
+
 export type InspectionDecision = "ACCEPTED" | "CONDITIONAL" | "REJECTED";
 
 export type AllocationPool = "schools" | "operator" | "contributors";

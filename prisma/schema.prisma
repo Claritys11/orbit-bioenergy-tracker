@@ -32,6 +32,17 @@ enum BiodigesterStatus {
   INACTIVE
 }
 
+enum ContainerStatus {
+  AVAILABLE
+  READY_FOR_PICKUP
+  SCHEDULED
+  IN_TRANSIT
+  AT_FACILITY
+  EMPTIED
+  REVOKED
+  INACTIVE
+}
+
 enum BatchStatus {
   DRAFT
   READY_FOR_PICKUP
@@ -167,6 +178,7 @@ model Organisation {
   facility    PartnerFacility?
   canteens    Canteen[]
   sources     WasteSource[]
+  containers  WasteContainer[]
   batches     WasteBatch[]
   contributor SupportingContributor?
   auditLogs   AuditLog[]
@@ -225,7 +237,8 @@ model WasteSource {
   name           String
   sourceType     String
 
-  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisation Organisation     @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  containers   WasteContainer[]
   batches      WasteBatch[]
 }
 
@@ -236,17 +249,47 @@ model FeedstockCategory {
   conditionFactor Float
   description     String
 
-  batches WasteBatch[]
+  containers WasteContainer[]
+  batches    WasteBatch[]
+}
+
+model WasteContainer {
+  id             String          @id @default(uuid())
+  containerCode  String          @unique
+  qrToken        String          @unique
+  organisationId String
+  sourceId       String
+  categoryId     String
+  capacityKg     Float?          @default(50.0)
+  status         ContainerStatus @default(AVAILABLE)
+  isActive       Boolean         @default(true)
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organisation Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  source       WasteSource       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  category     FeedstockCategory @relation(fields: [categoryId], references: [id])
+  batches      WasteBatch[]
+
+  @@index([organisationId, status])
+  @@index([qrToken])
 }
 
 model WasteBatch {
   id                    String      @id @default(uuid())
   batchCode             String      @unique
   qrToken               String      @unique
+  containerId           String?
   sourceOrganisationId  String
   sourceId              String
   categoryId            String
   grossWeightKg         Float
+  declaredMassKg        Float?
+  collectedMassKg       Float?
+  verifiedGrossMassKg   Float?
+  rejectedMassKg        Float?
+  acceptedMassKg        Float?
   collectionTimestamp   DateTime
   responsibleUserId     String
   storageStatus         String
@@ -256,10 +299,11 @@ model WasteBatch {
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
 
-  sourceOrganisation Organisation  @relation(fields: [sourceOrganisationId], references: [id])
-  source             WasteSource   @relation(fields: [sourceId], references: [id])
+  container          WasteContainer?   @relation(fields: [containerId], references: [id])
+  sourceOrganisation Organisation      @relation(fields: [sourceOrganisationId], references: [id])
+  source             WasteSource       @relation(fields: [sourceId], references: [id])
   category           FeedstockCategory @relation(fields: [categoryId], references: [id])
-  responsibleUser    User          @relation("ResponsibleUser", fields: [responsibleUserId], references: [id])
+  responsibleUser    User              @relation("ResponsibleUser", fields: [responsibleUserId], references: [id])
   photos             BatchPhoto[]
   inspection         ContaminationInspection?
   pickupRequest      PickupRequest?
@@ -269,6 +313,7 @@ model WasteBatch {
 
   @@index([sourceOrganisationId, status])
   @@index([qrToken])
+  @@index([containerId])
 }
 
 model BatchPhoto {

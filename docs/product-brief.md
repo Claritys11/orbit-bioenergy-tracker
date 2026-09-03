@@ -6,11 +6,17 @@ ORBIT is built for JA WE Challenge 2026, theme: "Reimagine Energy: Powering Our 
 ## Problem Statement
 Schools generate organic waste repeatedly, but one school may not provide enough stable feedstock for its own biodigester. Community waste volumes are larger but scattered and often contaminated. Waste management and energy planning are usually handled separately, so schools do not see clear feedback from sorting behaviour to usable energy outcomes.
 
+## Core Positioning Statement
+> **ORBIT is a digital coordination and traceability system that connects schools with community waste-to-energy operators, turning verified organic waste contributions into measurable and traceable energy returns.**
+
 ## Proposed Solution
-ORBIT connects schools, canteens, supporting contributors, TPS3R/KSM-style operators, and community partners in one auditable loop: waste source -> QR batch -> quality verification -> scheduled collection -> partner conversion -> verified biogas -> fair allocation -> public impact.
+ORBIT connects schools, canteens, supporting contributors, TPS3R/KSM-style operators, and community partners in one auditable loop:
+Waste Source $\rightarrow$ Reusable QR Container $\rightarrow$ Batch Registration $\rightarrow$ Quality Verification $\rightarrow$ Scheduled Collection $\rightarrow$ Biodigester Conversion $\rightarrow$ Verified Biogas $\rightarrow$ Purity-to-Power Allocation $\rightarrow$ Energy Return & Impact.
 
 ## Main Innovation
-The Purity-to-Power Allocation Engine rewards accepted, conversion-ready feedstock instead of unverified gross waste. It separates estimated gas from verified gas and uses verified allocatable gas for allocation.
+1. **Persistent Digital Container Identity**: Reusable physical waste containers have persistent QR tags (`CNT-TELKOM-001-01`). One container identity connects multiple collection cycles without requiring single-use QR printouts.
+2. **Purity-to-Power Allocation Engine**: Rewards accepted, clean, conversion-ready feedstock instead of unverified gross waste. It separates estimated gas from verified gas and uses verified allocatable gas for energy allocation.
+3. **No QR = No Traceable Credit Principle**: Un-tagged waste received at TPS3R can still be processed, but only official QR containers allow clean organic contributions to be reliably attributed and credited back to participating schools and communities.
 
 ## Target Users
 - Public visitors, students, parents, judges, local government, and partner candidates.

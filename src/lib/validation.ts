@@ -54,3 +54,18 @@ export const fulfilmentFormSchema = z.object({
   deliveryMode: z.enum(["PIPED_BIOGAS", "LOW_PRESSURE_GAS_BAG", "ON_HUB_COMMUNITY_USAGE"]),
   notes: z.string().min(3).max(500),
 });
+
+export const containerFormSchema = z.object({
+  organisationId: z.string().uuid(),
+  sourceId: z.string().uuid(),
+  categoryId: z.string().uuid(),
+  capacityKg: z.coerce.number().positive().max(1000).default(50),
+  notes: z.string().max(500).optional().or(z.literal("")),
+});
+
+export const quickBatchFromContainerSchema = z.object({
+  containerId: z.string().uuid(),
+  declaredMassKg: z.coerce.number().positive().max(1000),
+  photoUrl: z.string().url().optional().or(z.literal("")),
+  notes: z.string().max(200).optional().or(z.literal("")),
+});
