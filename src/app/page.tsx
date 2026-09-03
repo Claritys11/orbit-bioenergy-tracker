@@ -12,14 +12,14 @@ import { formatGas, formatKg } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 const workflow = [
-  ["Sort", "Canteen staff separate eligible organic waste."],
-  ["Register", "Waste is weighed and registered as a QR batch."],
-  ["Collect", "ORBIT schedules pickup based on volume and storage time."],
-  ["Verify", "Partner operators record contamination and accepted mass."],
-  ["Convert", "Accepted waste enters a validated biodigestion facility."],
-  ["Measure", "The facility records verified biogas production."],
-  ["Allocate", "ORBIT calculates fair shares from verified allocatable gas."],
-  ["Use and Report", "Fulfilment and public impact are recorded transparently."],
+  ["Tag Container", "Super Admin issues persistent digital identity tags (e.g. CNT-TELKOM-001-01) attached to physical reusable waste bins."],
+  ["Register Batch", "Canteen staff scan the reusable container QR and submit declared organic waste weight."],
+  ["Schedule & Transit", "ORBIT schedules operator pickup and tracks container transport to the TPS3R facility."],
+  ["Inspect & Empty", "Operators inspect contamination rate and empty the container at the facility, immediately returning the bin to AVAILABLE status."],
+  ["Biodigester Conversion", "Accepted organic feedstock enters the biodigester for anaerobic digestion."],
+  ["Record Verified Gas", "Facility records actual measured biogas output post-conversion."],
+  ["Purity-to-Power Allocation", "ORBIT allocates energy credit using verified allocatable gas (50% schools / 30% operator / 20% contributors)."],
+  ["Energy Return & Impact", "Energy fulfilment and public-safe sustainability impact are reported transparently."],
 ];
 
 const userSteps = [
@@ -47,18 +47,16 @@ export default async function Home() {
         <section className="border-b border-[var(--orbit-border)] bg-white">
           <div className="orbit-container grid min-h-[82vh] gap-10 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <Badge tone="amber">Demonstration dataset - awaiting field validation</Badge>
+              <Badge tone="amber">JA WE Challenge 2026 Competition Prototype</Badge>
               <h1 className="mt-5 max-w-4xl text-5xl font-bold tracking-normal text-[var(--orbit-primary)] md:text-7xl">
                 Turning cleaner school waste into traceable community energy.
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-                ORBIT connects schools, community waste operators, and supporting contributors
-                through a transparent system that tracks organic waste from collection to verified
-                biogas allocation.
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 font-medium">
+                ORBIT is a digital coordination and traceability system connecting schools with community waste-to-energy operators, turning verified organic waste contributions into measurable and traceable energy returns.
               </p>
-              <p className="mt-4 text-sm font-semibold text-[var(--orbit-primary)]">
-                Measured, estimated, and pilot data are always displayed separately.
-              </p>
+              <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 font-semibold">
+                🛡️ No verified source identity = No source-specific energy allocation. Persistent reusable QR containers bridge physical waste flow directly with ORBIT bioenergy accounting.
+              </div>
               <div className="mt-8 flex flex-wrap gap-3">
                 <LinkButton href="/transparency" className="bg-[var(--orbit-primary)]">
                   Explore Live Impact <ArrowRight size={16} aria-hidden />
