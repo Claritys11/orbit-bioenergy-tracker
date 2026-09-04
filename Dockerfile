@@ -9,7 +9,7 @@ FROM base AS migrator
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npx prisma db seed"]
 
 FROM base AS builder
 WORKDIR /app
