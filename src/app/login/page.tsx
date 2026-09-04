@@ -62,16 +62,6 @@ function LoginForm() {
           <button
             type="button"
             onClick={() => {
-              setEmail("community@orbit.test");
-              setPassword("OrbitDemo2026!");
-            }}
-            className="rounded bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 hover:bg-emerald-200"
-          >
-            Community
-          </button>
-          <button
-            type="button"
-            onClick={() => {
               setEmail("canteen@orbit.test");
               setPassword("OrbitDemo2026!");
             }}
@@ -82,12 +72,32 @@ function LoginForm() {
           <button
             type="button"
             onClick={() => {
+              setEmail("school@orbit.test");
+              setPassword("OrbitDemo2026!");
+            }}
+            className="rounded bg-blue-100 px-2 py-1 font-semibold text-blue-800 hover:bg-blue-200"
+          >
+            School Admin
+          </button>
+          <button
+            type="button"
+            onClick={() => {
               setEmail("operator@orbit.test");
               setPassword("OrbitDemo2026!");
             }}
             className="rounded bg-amber-100 px-2 py-1 font-semibold text-amber-800 hover:bg-amber-200"
           >
             Operator
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("community@orbit.test");
+              setPassword("OrbitDemo2026!");
+            }}
+            className="rounded bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 hover:bg-emerald-200"
+          >
+            Community Facility (TPS3R)
           </button>
           <button
             type="button"

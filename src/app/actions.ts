@@ -73,7 +73,7 @@ export async function logoutAction() {
 }
 
 export async function createPartnerAction(_: unknown, formData: FormData) {
-  const actor = await requireUser("manage_org");
+  const actor = await requireUser("manage_system");
   const orgName = String(formData.get("organisationName") ?? "").trim();
   const orgType = String(formData.get("organisationType") ?? "").trim();
   const userName = String(formData.get("userName") ?? "").trim();
@@ -1026,6 +1026,26 @@ export async function createContainerAction(_: unknown, formData: FormData) {
   });
   const code = `CNT-${slugPrefix}-${String(count + 1).padStart(3, "0")}-${Math.floor(10 + Math.random() * 90)}`;
   const qr = `CNT-QR-${token().slice(0, 12).toUpperCase()}`;
+  let categoryId = parsed.data.categoryId || undefined;
+  if (!categoryId) {
+    const mixedCategory = (await prisma.feedstockCategory.findFirst({
+      where: { name: { contains: "Mixed", mode: "insensitive" } },
+    })) || (await prisma.feedstockCategory.findFirst({ orderBy: { name: "asc" } }));
+
+    if (mixedCategory) {
+      categoryId = mixedCategory.id;
+    } else {
+      const createdCat = await prisma.feedstockCategory.create({
+        data: {
+          name: "Mixed Organic Waste",
+          yieldFactor: 0.088,
+          conditionFactor: 1.0,
+          description: "Randomized and mixed canteen & school organic food scraps.",
+        },
+      });
+      categoryId = createdCat.id;
+    }
+  }
 
   const container = await prisma.wasteContainer.create({
     data: {
@@ -1033,7 +1053,7 @@ export async function createContainerAction(_: unknown, formData: FormData) {
       qrToken: qr,
       organisationId: parsed.data.organisationId,
       sourceId: parsed.data.sourceId,
-      categoryId: parsed.data.categoryId,
+      categoryId,
       capacityKg: parsed.data.capacityKg,
       notes: parsed.data.notes || undefined,
       status: "AVAILABLE",
@@ -1122,16 +1142,16 @@ export async function createBatchFromContainerAction(_: unknown, formData: FormD
   }
 
   if (user.role === "SUPER_ADMIN") {
-    return { error: "Batch registration for reusable containers is reserved for community partners and canteen staff." };
+    return { error: "Batch registration for reusable containers is reserved for canteen staff and school admins." };
   }
 
-  const isCommunityRole = ["COMMUNITY_PARTNER", "CANTEEN_STAFF", "SCHOOL_ADMIN"].includes(user.role);
+  const isAuthorizedRole = ["CANTEEN_STAFF", "SCHOOL_ADMIN"].includes(user.role);
   const isAuthorized =
-    isCommunityRole &&
-    (user.role === "COMMUNITY_PARTNER" || user.organisationId === container.organisationId || !user.organisationId);
+    isAuthorizedRole &&
+    (user.organisationId === container.organisationId || !user.organisationId);
 
   if (!isAuthorized) {
-    return { error: "You are not authorized to submit batches for another organization's container." };
+    return { error: "Waste batch registration is reserved for canteen staff and school admins of this container's school." };
   }
 
   const activeBatch = await prisma.wasteBatch.findFirst({

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/services/authz";
 
 export default async function UsersPage() {
-  await requireUser("manage_org");
+  await requireUser("manage_system");
   const organisations = await prisma.organisation.findMany({
     include: { memberships: { include: { user: true } }, school: true, facility: true, contributor: true },
     orderBy: { createdAt: "desc" },

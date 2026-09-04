@@ -84,16 +84,16 @@ export default async function ContainerAdaptivePage({
   );
 
   const isRevoked = !container.isActive || container.status === "REVOKED";
-  const isCommunityRole = Boolean(
-    user && ["COMMUNITY_PARTNER", "CANTEEN_STAFF", "SCHOOL_ADMIN"].includes(user.role)
+  const isCanteenOrSchool = Boolean(
+    user && ["CANTEEN_STAFF", "SCHOOL_ADMIN"].includes(user.role)
   );
-  const isCommunityAuthorized = Boolean(
+  const isAuthorizedOrg = Boolean(
     user &&
-    isCommunityRole &&
-    (user.role === "COMMUNITY_PARTNER" || user.organisationId === container.organisationId || !user.organisationId)
+    isCanteenOrSchool &&
+    (user.organisationId === container.organisationId || !user.organisationId)
   );
   const canSubmitBatch = Boolean(
-    isCommunityAuthorized && !isRevoked && !activeBatch
+    isAuthorizedOrg && !isRevoked && !activeBatch
   );
 
   const batchesCount = container.batches.length;
@@ -166,14 +166,23 @@ export default async function ContainerAdaptivePage({
                 Origin: <span className="text-slate-900">{container.organisation.name}</span> — {container.source.name}
               </p>
             </div>
-            <ConfidenceBadge value="Measured" />
+            <div className="flex flex-col items-end gap-2">
+              <ConfidenceBadge value="Measured" />
+              <LinkButton
+                href={`/partners/${container.organisation.slug}`}
+                variant="secondary"
+                className="text-xs font-semibold text-emerald-800 border-emerald-300 hover:bg-emerald-50"
+              >
+                🏫 School Profile
+              </LinkButton>
+            </div>
           </div>
 
           {/* Quick Metrics Grid */}
           <div className="mt-6 grid gap-4 sm:grid-cols-4">
             <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
               <p className="text-xs text-slate-500">Feedstock Type</p>
-              <p className="mt-1 text-base font-bold text-slate-900">{container.category.name}</p>
+              <p className="mt-1 text-base font-bold text-slate-900">{container.category?.name || "Mixed organic waste"}</p>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 p-3">
               <p className="text-xs text-slate-500">Processed Cycles</p>
@@ -236,24 +245,82 @@ export default async function ContainerAdaptivePage({
           </Card>
         ) : null}
 
-        {/* ROLE ADAPTIVE WORKFLOW SECTION */}
-        {user ? (
+        {/* PUBLIC UN-AUTHENTICATED MODE: 2 Clear First-Class Options */}
+        {!user ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Option 1: Log in to Community (Canteen / School Staff) to manage the trash */}
+            <Card className="border-2 border-[var(--orbit-primary)]/30 bg-gradient-to-br from-blue-50/80 to-indigo-50/40 p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🔑</span>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--orbit-primary)]">Option 1: For Community</span>
+                  <h2 className="text-base font-bold text-slate-950">Log In to Manage Trash</h2>
+                </div>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                Are you canteen staff or school administrator? Log in to fill this reusable container, submit declared weight, and request operator pickup.
+              </p>
+              <div className="mt-4">
+                <LinkButton
+                  href={`/login?callbackUrl=${encodeURIComponent(`/c/${container.qrToken}`)}`}
+                  variant="primary"
+                  className="w-full text-xs font-bold"
+                >
+                  🔑 Log In to Community (Canteen / School)
+                </LinkButton>
+              </div>
+            </Card>
+
+            {/* Option 2: See School / Canteen Profile */}
+            <Card className="border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/80 to-teal-50/40 p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🏫</span>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Option 2: For Everyone</span>
+                  <h2 className="text-base font-bold text-slate-950">See School / Canteen Profile</h2>
+                </div>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                View <strong>{container.organisation.name}</strong>&apos;s public impact profile, verified contribution streaks, badge achievements, and total clean bioenergy generated.
+              </p>
+              <div className="mt-4">
+                <LinkButton
+                  href={`/partners/${container.organisation.slug}`}
+                  variant="secondary"
+                  className="w-full text-xs font-bold border-emerald-600 text-emerald-900 hover:bg-emerald-100"
+                >
+                  🏫 View School / Canteen Profile →
+                </LinkButton>
+              </div>
+            </Card>
+          </div>
+        ) : (
+          /* ROLE ADAPTIVE WORKFLOW SECTION FOR LOGGED-IN USERS */
           <Card className="border-2 border-[var(--orbit-primary)]/20 p-6 bg-slate-50/50">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h2 className="text-lg font-bold text-slate-900">
-                ⚡ Authenticated Action Panel ({user.role})
-              </h2>
-              <span className="text-xs font-medium text-slate-500">{user.email}</span>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  ⚡ Authenticated Action Panel ({user.role})
+                </h2>
+                <span className="text-xs font-medium text-slate-500">{user.email}</span>
+              </div>
+              <LinkButton
+                href={`/partners/${container.organisation.slug}`}
+                variant="secondary"
+                className="text-xs font-semibold"
+              >
+                🏫 School Profile
+              </LinkButton>
             </div>
 
-            {/* COMMUNITY Form (Community Partner / Canteen Staff / School Admin) */}
+            {/* CANTEEN & SCHOOL ADMIN Batch Registration Form */}
             {canSubmitBatch ? (
               <div className="mt-4">
                 <div className="rounded-lg border-2 border-emerald-500/30 bg-emerald-50/50 p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                        COMMUNITY BATCH REGISTRATION
+                        CANTEEN & SCHOOL BATCH REGISTRATION
                       </span>
                       <h3 className="text-base font-bold text-slate-900">
                         Register New Waste Batch for {container.containerCode}
@@ -262,7 +329,7 @@ export default async function ContainerAdaptivePage({
                     <Badge tone="green">Ready to Fill</Badge>
                   </div>
                   <p className="mt-1 text-xs text-slate-600">
-                    Fill up this reusable container and submit declared mass for operator collection.
+                    Fill up this reusable container with organic food waste and submit declared mass for operator collection.
                   </p>
                   <form action={createBatchFromContainerFormAction} className="mt-4 grid gap-4 rounded-lg bg-white p-4 border border-slate-200 shadow-sm">
                     <input type="hidden" name="containerId" value={container.id} />
@@ -306,10 +373,30 @@ export default async function ContainerAdaptivePage({
               </div>
             ) : null}
 
-            {/* Non-authorized Community or other org notice */}
-            {!canSubmitBatch && isCommunityRole && !activeBatch ? (
+            {/* Non-authorized Canteen/School from another org */}
+            {!canSubmitBatch && isCanteenOrSchool && !activeBatch ? (
               <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                You are logged in as {user.name} ({user.role}) from {user.organisationName || "your organisation"}. Only registered community members of <strong>{container.organisation.name}</strong> can submit batches for this container.
+                You are logged in as {user.name} ({user.role}) from {user.organisationName || "your school"}. Only registered canteen staff and school admins of <strong>{container.organisation.name}</strong> can submit batches for this container.
+              </div>
+            ) : null}
+
+            {/* COMMUNITY_PARTNER View (TPS3R Hub / Facility Processor) */}
+            {user.role === "COMMUNITY_PARTNER" ? (
+              <div className="mt-4 rounded-lg border border-teal-200 bg-teal-50/70 p-4 text-xs text-teal-950">
+                <div className="flex items-center gap-2 font-bold text-teal-900 text-sm">
+                  🏢 Community Facility Processor (TPS3R Hub)
+                </div>
+                <p className="mt-1 leading-relaxed">
+                  Waste batch registration for this container is performed at the school source by <strong>{container.organisation.name}</strong> canteen and school staff. As the community facility processor, you receive, inspect, and convert batches once delivered.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <LinkButton href="/scan" variant="primary" className="text-xs">
+                    📥 Receive Container at Facility
+                  </LinkButton>
+                  <LinkButton href="/operations/inspections" variant="secondary" className="text-xs">
+                    🔍 Inspect Batches
+                  </LinkButton>
+                </div>
               </div>
             ) : null}
 
@@ -334,7 +421,7 @@ export default async function ContainerAdaptivePage({
                   👑 Super Admin View
                 </div>
                 <p className="mt-1 leading-relaxed">
-                  Batch registration for this reusable container is reserved for community partners and canteen staff of <strong className="font-semibold">{container.organisation.name}</strong>.
+                  Batch registration for this reusable container is reserved for canteen staff and school admins of <strong className="font-semibold">{container.organisation.name}</strong>.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <LinkButton href="/admin/containers" variant="secondary" className="text-xs">
@@ -347,23 +434,6 @@ export default async function ContainerAdaptivePage({
               </div>
             ) : null}
           </Card>
-        ) : (
-          /* UNAUTHENTICATED PUBLIC VIEW NOTICE */
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">
-            <div className="flex items-center gap-2 font-bold text-slate-900">
-              🔒 Public-Safe View Mode
-            </div>
-            <p className="mt-1 text-xs leading-relaxed text-slate-600">
-              You are scanning this container in public transparency mode. Waste batch registration is authenticated and reserved for community partners and canteen staff.
-            </p>
-            <LinkButton
-              href={`/login?callbackUrl=${encodeURIComponent(`/c/${container.qrToken}`)}`}
-              variant="primary"
-              className="mt-3 text-xs font-semibold"
-            >
-              🔑 Log In as Community to Register Waste Batch
-            </LinkButton>
-          </div>
         )}
 
         {/* Active Journey Timeline if Batch Active */}

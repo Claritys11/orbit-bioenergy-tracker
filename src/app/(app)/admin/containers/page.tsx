@@ -84,21 +84,6 @@ export default async function AdminContainersPage({
             </label>
 
             <label className="grid gap-1.5 text-sm font-medium text-slate-800">
-              Feedstock Category *
-              <select
-                name="categoryId"
-                required
-                className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="grid gap-1.5 text-sm font-medium text-slate-800">
               Capacity Limit (kg)
               <input
                 type="number"

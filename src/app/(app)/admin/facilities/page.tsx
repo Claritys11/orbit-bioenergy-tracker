@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/services/authz";
 
 export default async function FacilitiesPage() {
-  await requireUser("manage_org");
+  await requireUser("manage_system");
   const facilities = await prisma.partnerFacility.findMany({ include: { organisation: true, vehicles: true } });
   return (
     <div className="grid gap-6">

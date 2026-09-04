@@ -90,7 +90,7 @@ export const fulfilmentFormSchema = z.object({
 export const containerFormSchema = z.object({
   organisationId: z.string().uuid(),
   sourceId: z.string().uuid(),
-  categoryId: z.string().uuid(),
+  categoryId: z.string().uuid().optional().or(z.literal("")),
   capacityKg: z.coerce.number().positive().max(1000).default(50),
   notes: z.string().max(500).optional().or(z.literal("")),
 });

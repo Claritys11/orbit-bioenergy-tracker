@@ -51,14 +51,6 @@ export default async function NewBatchPage() {
             name="sourceId"
             options={sources.map((source) => ({ value: source.id, label: source.name }))}
           />
-          <SelectField
-            label="Feedstock category"
-            name="categoryId"
-            options={categories.map((category) => ({
-              value: category.id,
-              label: `${category.name} (${category.yieldFactor} est. yield)`,
-            }))}
-          />
 
           <Field
             label="Estimated mass (kg) — Optional"

@@ -72,8 +72,8 @@ const groups: Array<{
   {
     label: "Management",
     items: [
-      { href: "/admin/facilities", label: "Facilities", icon: Factory, permission: "manage_org" },
-      { href: "/admin/users", label: "Organisations and Users", icon: Users, permission: "manage_org" },
+      { href: "/admin/facilities", label: "Facilities", icon: Factory, permission: "manage_system" },
+      { href: "/admin/users", label: "Organisations and Users", icon: Users, permission: "manage_system" },
       { href: "/admin/safety", label: "Safety", icon: ShieldAlert, permission: "manage_safety" },
       { href: "/admin/audit", label: "Audit Logs", icon: FileText, permission: "view_audit" },
       { href: "/admin/settings", label: "Settings", icon: Settings, permission: "manage_system" },

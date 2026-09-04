@@ -45,7 +45,6 @@ const rolePermissions: Record<Role, Permission[]> = {
   SCHOOL_ADMIN: [
     "create_waste_record",
     "create_batch",
-    "manage_org",
     "view_reports",
     "view_audit",
     "view_batches",
@@ -68,8 +67,6 @@ const rolePermissions: Record<Role, Permission[]> = {
     "view_batches",
   ],
   COMMUNITY_PARTNER: [
-    "create_waste_record",
-    "create_batch",
     "receive_container",
     "inspect_batch",
     "record_conversion",

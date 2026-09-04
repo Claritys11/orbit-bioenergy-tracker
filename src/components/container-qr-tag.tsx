@@ -84,7 +84,7 @@ export function ContainerQrTag({
         </div>
         <div>
           <p className="font-semibold text-slate-500 print:text-slate-700">Feedstock Type:</p>
-          <p className="font-bold text-slate-950">{categoryName}</p>
+          <p className="font-bold text-slate-950">{categoryName || "Mixed organic waste"}</p>
         </div>
         <div>
           <p className="font-semibold text-slate-500 print:text-slate-700">Max Capacity:</p>
