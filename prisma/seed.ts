@@ -49,6 +49,7 @@ async function main() {
   await prisma.conversionBatch.deleteMany();
   await prisma.conversionCycle.deleteMany();
   await prisma.pickup.deleteMany();
+  await prisma.pickupRequestItem.deleteMany();
   await prisma.pickupRequest.deleteMany();
   await prisma.contaminationInspection.deleteMany();
   await prisma.batchPhoto.deleteMany();
@@ -68,6 +69,8 @@ async function main() {
   const platform = await prisma.organisation.create({
     data: { name: "ORBIT Platform Demo", slug: "orbit-platform", type: "PLATFORM" },
   });
+
+  // School A: 1 ready item (Green)
   const schoolA = await prisma.organisation.create({
     data: {
       name: "Bumi Lestari Junior School",
@@ -80,6 +83,8 @@ async function main() {
     },
     include: { canteens: true, sources: true },
   });
+
+  // School B: 3 ready items (Amber)
   const schoolB = await prisma.organisation.create({
     data: {
       name: "Cahaya Nusantara High School",
@@ -92,6 +97,21 @@ async function main() {
     },
     include: { canteens: true, sources: true },
   });
+
+  // School C: 7 ready items (Red Priority)
+  const schoolC = await prisma.organisation.create({
+    data: {
+      name: "SMK Telkom Malang",
+      slug: "smk-telkom-malang",
+      type: "SCHOOL",
+      address: "Jl. Danau Ranau, Malang",
+      school: { create: { educationLevel: "Vocational Secondary", studentCount: 1200 } },
+      canteens: { create: { name: "Main Campus Canteen", managerName: "Budi Utomo", storageLimitKg: 300 } },
+      sources: { create: { name: "Central Canteen Prep Station", sourceType: "School canteen" } },
+    },
+    include: { canteens: true, sources: true },
+  });
+
   const operatorOrg = await prisma.organisation.create({
     data: {
       name: "KSM Energi Sirkular Bandung",
@@ -111,9 +131,11 @@ async function main() {
     },
     include: { facility: true, sources: true },
   });
+
   const community = await prisma.organisation.create({
     data: { name: "RW 04 Community Kitchen", slug: "rw04-community", type: "COMMUNITY_PARTNER" },
   });
+
   const market = await prisma.organisation.create({
     data: {
       name: "Pasar Tunas Vendor Collective",
@@ -125,7 +147,7 @@ async function main() {
     include: { sources: true },
   });
 
-  const [superAdmin, schoolAdmin, canteenStaff, student, operator, partner] =
+  const [_superAdmin, schoolAdmin, canteenStaff, _student, operator, partner] =
     await Promise.all([
       user("Alya Orbit", "super@orbit.test", "SUPER_ADMIN", platform.id),
       user("Nadia Pratama", "school@orbit.test", "SCHOOL_ADMIN", schoolA.id),
@@ -170,14 +192,6 @@ async function main() {
     }),
   ]);
 
-  await prisma.notification.create({
-    data: {
-      userId: student.id,
-      title: "Sorting feedback available",
-      body: "Demo student view: scan a permitted QR code to learn how cleaner sorting improves community energy allocation.",
-    },
-  });
-
   const config = await prisma.allocationConfiguration.create({
     data: {
       version: 1,
@@ -192,7 +206,7 @@ async function main() {
     },
   });
 
-  const vehicle = await prisma.vehicle.create({
+  await prisma.vehicle.create({
     data: {
       facilityId: operatorOrg.facility!.id,
       plate: "D 2046 ORB",
@@ -227,6 +241,19 @@ async function main() {
     },
   });
 
+  const containerSchoolC = await prisma.wasteContainer.create({
+    data: {
+      containerCode: "CNT-SMK-001-03",
+      qrToken: "CNT-TELKOM-001-03",
+      organisationId: schoolC.id,
+      sourceId: schoolC.sources[0].id,
+      categoryId: categories[1].id,
+      capacityKg: 150,
+      status: "AVAILABLE",
+      notes: "Central Canteen Prep Station Container",
+    },
+  });
+
   const containerMarket = await prisma.wasteContainer.create({
     data: {
       containerCode: "CNT-PASAR-001-01",
@@ -240,6 +267,90 @@ async function main() {
     },
   });
 
+  // Seed Ready Batches for Accumulation Demo
+  // 1. School A: 1 ready batch (GREEN)
+  await prisma.wasteBatch.create({
+    data: {
+      batchCode: "ORB-2026-100236",
+      qrToken: crypto.randomUUID().replaceAll("-", ""),
+      containerId: containerSchoolA.id,
+      sourceOrganisationId: schoolA.id,
+      sourceId: schoolA.sources[0].id,
+      categoryId: categories[1].id,
+      grossWeightKg: 14.5,
+      declaredMassKg: 14.5,
+      collectionTimestamp: new Date(),
+      responsibleUserId: canteenStaff.id,
+      storageStatus: "Covered bin; ready for daily pickup",
+      pickupStatus: "REQUESTED",
+      status: "READY_FOR_PICKUP",
+      activityTimeline: [{ status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: canteenStaff.name }],
+    },
+  });
+
+  // 2. School B: 3 ready batches (AMBER)
+  for (let i = 1; i <= 3; i++) {
+    await prisma.wasteBatch.create({
+      data: {
+        batchCode: `ORB-2026-10023${6 + i}`,
+        qrToken: crypto.randomUUID().replaceAll("-", ""),
+        containerId: containerSchoolB.id,
+        sourceOrganisationId: schoolB.id,
+        sourceId: schoolB.sources[0].id,
+        categoryId: categories[0].id,
+        grossWeightKg: 12 + i * 4,
+        declaredMassKg: 12 + i * 4,
+        collectionTimestamp: new Date(),
+        responsibleUserId: schoolAdmin.id,
+        storageStatus: "Accumulating canteen waste",
+        pickupStatus: "REQUESTED",
+        status: "READY_FOR_PICKUP",
+        activityTimeline: [{ status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: schoolAdmin.name }],
+      },
+    });
+  }
+
+  // 3. School C: 7 ready batches grouped into a PENDING PickupRequest (RED High Accumulation)
+  const schoolCBatches = [];
+  for (let i = 1; i <= 7; i++) {
+    const b = await prisma.wasteBatch.create({
+      data: {
+        batchCode: `ORB-2026-10024${i}`,
+        qrToken: crypto.randomUUID().replaceAll("-", ""),
+        containerId: containerSchoolC.id,
+        sourceOrganisationId: schoolC.id,
+        sourceId: schoolC.sources[0].id,
+        categoryId: categories[1].id,
+        grossWeightKg: 8 + i * 3,
+        declaredMassKg: 8 + i * 3,
+        collectionTimestamp: new Date(),
+        responsibleUserId: schoolAdmin.id,
+        storageStatus: "High accumulation sorting station",
+        pickupStatus: "REQUESTED",
+        status: "PICKUP_REQUESTED",
+        activityTimeline: [{ status: "PICKUP_REQUESTED", at: new Date().toISOString(), actor: schoolAdmin.name }],
+      },
+    });
+    schoolCBatches.push(b);
+  }
+
+  await prisma.pickupRequest.create({
+    data: {
+      requestCode: "REQ-2026-000891",
+      schoolOrganisationId: schoolC.id,
+      requestedByUserId: schoolAdmin.id,
+      requestedAt: new Date(Date.now() - 3600 * 1000),
+      proposedPickupStart: new Date(Date.now() + 2 * 3600 * 1000),
+      proposedPickupEnd: new Date(Date.now() + 6 * 3600 * 1000),
+      status: "PENDING_OPERATOR_RESPONSE",
+      notes: "7 ready containers ready behind Main Campus Canteen prep station.",
+      items: {
+        create: schoolCBatches.map((b) => ({ batchId: b.id })),
+      },
+    },
+  });
+
+  // Seed Historical Processed Batches & Conversion Cycle
   const batchInputs = [
     {
       org: schoolA,
@@ -277,18 +388,6 @@ async function main() {
       conditionFactor: 1.05,
       code: "ORB-2026-100233",
     },
-    {
-      org: schoolA,
-      source: schoolA.sources[0],
-      category: categories[2],
-      container: containerSchoolA,
-      user: canteenStaff,
-      gross: 18,
-      status: "REJECTED" as const,
-      rejected: 7.5,
-      conditionFactor: 0.6,
-      code: "ORB-2026-100234",
-    },
   ];
 
   const processedBatches = [];
@@ -299,6 +398,20 @@ async function main() {
       warningThresholdPercent: config.contaminationWarning,
       rejectThresholdPercent: config.contaminationReject,
     });
+
+    const req = await prisma.pickupRequest.create({
+      data: {
+        requestCode: `REQ-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        schoolOrganisationId: item.org.id,
+        requestedByUserId: item.user.id,
+        proposedPickupStart: new Date("2026-08-20T04:00:00.000Z"),
+        proposedPickupEnd: new Date("2026-08-20T08:00:00.000Z"),
+        status: "DELIVERED",
+        acceptedAt: new Date("2026-08-20T04:30:00.000Z"),
+        actualScheduledAt: new Date("2026-08-20T06:00:00.000Z"),
+      },
+    });
+
     const batch = await prisma.wasteBatch.create({
       data: {
         batchCode: item.code,
@@ -323,18 +436,7 @@ async function main() {
           { status: "DELIVERED", at: "2026-08-20T07:30:00.000Z", actor: operator.name },
           { status: item.status, at: "2026-08-20T08:15:00.000Z", actor: operator.name },
         ],
-        pickupRequest: { create: { thresholdReason: "Demo route consolidation" } },
-        pickup: {
-          create: {
-            vehicleId: vehicle.id,
-            operatorOrgId: operatorOrg.id,
-            scheduledAt: new Date("2026-08-20T06:00:00.000Z"),
-            completedAt: new Date("2026-08-20T07:30:00.000Z"),
-            routeNotes: "Rule-based pickup after two school batches exceeded 80 kg combined.",
-            distanceKm: 6.8,
-            status: "DELIVERED",
-          },
-        },
+        pickupRequestItem: { create: { pickupRequestId: req.id } },
         inspection: {
           create: {
             inspectorId: operator.id,
@@ -342,12 +444,11 @@ async function main() {
             rejectedMassKg: item.rejected,
             contaminationRate: result.contaminationRate,
             acceptedMassKg: result.acceptedMassKg,
-            contaminationCategories:
-              result.decision === "REJECTED" ? ["plastic wrap", "unsafe mixed waste"] : ["minor packaging"],
+            contaminationCategories: ["minor packaging"],
             feedstockCondition: "Demo inspection: source-separated and weighed at operator hub",
             conditionFactor: item.conditionFactor,
             decision: result.decision,
-            notes: `${result.decision} demo inspection. Rejected or unsafe material has zero contribution.`,
+            notes: `${result.decision} demo inspection.`,
             photoUrls: [],
           },
         },
@@ -356,24 +457,6 @@ async function main() {
     });
     processedBatches.push(batch);
   }
-
-  const readyBatch = await prisma.wasteBatch.create({
-    data: {
-      batchCode: "ORB-2026-100235",
-      qrToken: crypto.randomUUID().replaceAll("-", ""),
-      sourceOrganisationId: schoolA.id,
-      sourceId: schoolA.sources[0].id,
-      categoryId: categories[1].id,
-      grossWeightKg: 29,
-      collectionTimestamp: new Date(),
-      responsibleUserId: canteenStaff.id,
-      storageStatus: "Covered bin; pickup requested before end of school day",
-      pickupStatus: "REQUESTED",
-      status: "READY_FOR_PICKUP",
-      activityTimeline: [{ status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: canteenStaff.name }],
-      pickupRequest: { create: { thresholdReason: "Volume threshold reached", maxStorageWarning: false } },
-    },
-  });
 
   const cycle = await prisma.conversionCycle.create({
     data: {
@@ -386,21 +469,13 @@ async function main() {
       allocatableGasM3: 12.6,
       digestateOutputKg: 46,
       measurementSource: "MANUAL",
-      notes: "Verified gas from operator meter log. Estimated batch gas is kept separate.",
+      notes: "Verified gas from operator meter log. Estimated gas kept separate.",
       measurements: {
         create: {
           volumeM3: 14.8,
           source: "MANUAL",
           measuredAt: new Date("2026-08-21T05:00:00.000Z"),
           notes: "Demo verified output, not an AI prediction.",
-        },
-      },
-      digestate: {
-        create: {
-          outputKg: 46,
-          distributedKg: 25,
-          recipient: "RW 04 community garden",
-          valueEstimate: 16100,
         },
       },
     },
@@ -444,32 +519,6 @@ async function main() {
     await prisma.wasteBatch.update({ where: { id: batch.id }, data: { status: "PROCESSED" } });
   }
 
-  const operatorContribution = calculateContribution({
-    batchId: readyBatch.id,
-    organisationId: operatorOrg.id,
-    pool: "operator",
-    acceptedMassKg: 18,
-    yieldFactor: 0.05,
-    qualityFactor: 1,
-    conditionFactor: 0.9,
-    rejected: false,
-  });
-  contributions.push(operatorContribution);
-  await prisma.contributionScore.create({
-    data: {
-      cycleId: cycle.id,
-      batchId: operatorContribution.batchId,
-      organisationId: operatorContribution.organisationId,
-      pool: operatorContribution.pool,
-      acceptedMassKg: operatorContribution.acceptedMassKg,
-      yieldFactor: operatorContribution.yieldFactor,
-      qualityFactor: operatorContribution.qualityFactor,
-      conditionFactor: operatorContribution.conditionFactor,
-      contributionScore: operatorContribution.contributionScore,
-      estimatedGasM3: operatorContribution.estimatedGasM3,
-    },
-  });
-
   const allocation = calculateAllocations({
     verifiedGasM3: cycle.verifiedGasM3,
     operationalUseM3: cycle.operationalUseM3,
@@ -507,93 +556,10 @@ async function main() {
         deliveryMode: item.pool === "schools" ? "LOW_PRESSURE_GAS_BAG" : "ON_HUB_COMMUNITY_USAGE",
         fulfilledAt: item.pool === "schools" ? new Date("2026-08-22T04:30:00.000Z") : undefined,
         operatorName: operator.name,
-        notes:
-          item.pool === "schools"
-            ? "Partial physical fulfilment. Remaining allocation is not labelled delivered."
-            : "Awaiting recipient schedule.",
+        notes: "Fulfilment evidence recorded for demo allocation.",
       },
     });
   }
-
-  await prisma.financialAssumption.create({
-    data: {
-      energyPricePerM3: 9800,
-      wasteSavingsPerKg: 450,
-      digestateValuePerKg: 350,
-      collectionCostPerKg: 220,
-      processingCostPerKg: 310,
-      maintenanceCostPerCycle: 25000,
-      platformFeePercent: 5,
-    },
-  });
-  await prisma.safetyAlert.createMany({
-    data: [
-      {
-        facilityId: operatorOrg.facility!.id,
-        type: "gas-leak alert drill",
-        severity: "WARNING",
-        message:
-          "Simulated safety drill: adult operator acknowledgement required. ORBIT is monitoring only.",
-        simulated: true,
-      },
-      {
-        facilityId: operatorOrg.facility!.id,
-        type: "abnormal pressure",
-        severity: "NORMAL",
-        message: "Simulated pressure reading returned to normal range.",
-        simulated: true,
-        acknowledgedAt: new Date(),
-      },
-    ],
-  });
-  await prisma.maintenanceEvent.create({
-    data: {
-      facilityId: operatorOrg.facility!.id,
-      eventType: "gas bag inspection",
-      severity: "WARNING",
-      dueAt: new Date("2026-08-29T02:00:00.000Z"),
-      notes: "Inspect seams, valves, and transport crate before next fulfilment route.",
-    },
-  });
-  const sensor = await prisma.sensorDevice.create({
-    data: {
-      facilityId: operatorOrg.facility!.id,
-      label: "Demo digester pressure sensor",
-      sensorType: "pressure",
-      simulated: true,
-      readings: { create: [{ value: 1.14, unit: "bar" }, { value: 1.09, unit: "bar" }] },
-    },
-  });
-
-  await prisma.auditLog.createMany({
-    data: [
-      {
-        actorId: superAdmin.id,
-        organisationId: platform.id,
-        action: "CONFIG_CREATED",
-        entityType: "AllocationConfiguration",
-        entityId: config.id,
-        after: { schoolPercent: 50, operatorPercent: 30, contributorPercent: 20 },
-        reason: "Seeded prototype assumptions.",
-      },
-      {
-        actorId: operator.id,
-        organisationId: operatorOrg.id,
-        action: "ALLOCATION_FINALISED",
-        entityType: "ConversionCycle",
-        entityId: cycle.id,
-        after: JSON.parse(JSON.stringify(allocation)),
-      },
-      {
-        actorId: operator.id,
-        organisationId: operatorOrg.id,
-        action: "SENSOR_REGISTERED",
-        entityType: "SensorDevice",
-        entityId: sensor.id,
-        after: { simulated: true },
-      },
-    ],
-  });
 
   console.log(`Seeded ORBIT demo. Login password for every demo account: ${password}`);
 }

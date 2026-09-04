@@ -157,16 +157,38 @@ describe("allocation engine", () => {
   });
 });
 
-describe("permissions", () => {
-  it("restricts operator to pickups and assigns processing to community partner", () => {
-    expect(can("OPERATOR", "schedule_pickup")).toBe(true);
-    expect(can("OPERATOR", "inspect_batch")).toBe(false);
-    expect(can("OPERATOR", "record_conversion")).toBe(false);
+describe("permissions & capabilities", () => {
+  it("grants SCHOOL_ADMIN pickup request authority but restricts inspection and conversion", () => {
+    expect(can("SCHOOL_ADMIN", "request_pickup")).toBe(true);
+    expect(can("SCHOOL_ADMIN", "inspect_batch")).toBe(false);
+    expect(can("SCHOOL_ADMIN", "record_conversion")).toBe(false);
+    expect(can("SCHOOL_ADMIN", "fulfil_allocation")).toBe(false);
+  });
 
-    expect(can("COMMUNITY_PARTNER", "inspect_batch")).toBe(true);
-    expect(can("COMMUNITY_PARTNER", "record_conversion")).toBe(true);
-    expect(can("COMMUNITY_PARTNER", "calculate_allocation")).toBe(true);
-    expect(can("COMMUNITY_PARTNER", "fulfil_allocation")).toBe(true);
+  it("assigns operational logistics, inspection, conversion, allocation, and fulfilment to OPERATOR", () => {
+    expect(can("OPERATOR", "respond_pickup_request")).toBe(true);
+    expect(can("OPERATOR", "manage_pickup_logistics")).toBe(true);
+    expect(can("OPERATOR", "inspect_batch")).toBe(true);
+    expect(can("OPERATOR", "record_conversion")).toBe(true);
+    expect(can("OPERATOR", "calculate_allocation")).toBe(true);
+    expect(can("OPERATOR", "fulfil_allocation")).toBe(true);
+    expect(can("OPERATOR", "manage_safety")).toBe(true);
+    expect(can("OPERATOR", "request_pickup")).toBe(false);
+  });
+
+  it("restricts COMMUNITY_PARTNER to read-only report monitoring", () => {
+    expect(can("COMMUNITY_PARTNER", "view_reports")).toBe(true);
+    expect(can("COMMUNITY_PARTNER", "inspect_batch")).toBe(false);
+    expect(can("COMMUNITY_PARTNER", "record_conversion")).toBe(false);
+    expect(can("COMMUNITY_PARTNER", "calculate_allocation")).toBe(false);
+    expect(can("COMMUNITY_PARTNER", "fulfil_allocation")).toBe(false);
+  });
+
+  it("allows CANTEEN_STAFF to register waste loads", () => {
+    expect(can("CANTEEN_STAFF", "create_waste_record")).toBe(true);
+    expect(can("CANTEEN_STAFF", "create_batch")).toBe(true);
+    expect(can("CANTEEN_STAFF", "request_pickup")).toBe(false);
+    expect(can("CANTEEN_STAFF", "inspect_batch")).toBe(false);
   });
 
   it("allows only SUPER_ADMIN to manage containers and issue QR", () => {
@@ -174,6 +196,23 @@ describe("permissions", () => {
     expect(can("SUPER_ADMIN", "issue_qr")).toBe(true);
     expect(can("CANTEEN_STAFF", "manage_containers")).toBe(false);
     expect(can("SCHOOL_ADMIN", "manage_containers")).toBe(false);
+  });
+});
+
+describe("urgency indicators", () => {
+  function getUrgency(itemCount: number) {
+    if (itemCount <= 1) return "GREEN";
+    if (itemCount <= 5) return "AMBER";
+    return "RED";
+  }
+
+  it("classifies ready waste accumulation threshold levels correctly", () => {
+    expect(getUrgency(0)).toBe("GREEN");
+    expect(getUrgency(1)).toBe("GREEN");
+    expect(getUrgency(2)).toBe("AMBER");
+    expect(getUrgency(5)).toBe("AMBER");
+    expect(getUrgency(6)).toBe("RED");
+    expect(getUrgency(10)).toBe("RED");
   });
 });
 

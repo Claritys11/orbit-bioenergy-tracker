@@ -19,6 +19,30 @@ export const inspectionFormSchema = z.object({
   notes: z.string().min(3).max(500),
 });
 
+export const pickupRequestFormSchema = z.object({
+  batchIds: z.array(z.string().uuid()).min(1, "Select at least one waste container/batch for pickup."),
+  proposedPickupStart: z.string().min(1, "Proposed start time is required."),
+  proposedPickupEnd: z.string().min(1, "Proposed end time is required."),
+  notes: z.string().max(500).optional().or(z.literal("")),
+});
+
+export const respondPickupRequestSchema = z.object({
+  requestId: z.string().uuid(),
+  decision: z.enum(["ACCEPT", "REJECT"]),
+  rejectionReason: z.string().optional().or(z.literal("")),
+}).refine((data) => data.decision !== "REJECT" || (data.rejectionReason && data.rejectionReason.trim().length >= 3), {
+  message: "A rejection reason (at least 3 characters) is required when rejecting a pickup request.",
+  path: ["rejectionReason"],
+});
+
+export const schedulePickupLogisticsSchema = z.object({
+  requestId: z.string().uuid(),
+  vehicleId: z.string().uuid().optional().or(z.literal("")),
+  actualScheduledAt: z.string().min(1, "Scheduled pickup time is required."),
+  routeNotes: z.string().min(3, "Route notes required."),
+  distanceKm: z.coerce.number().min(0).default(0),
+});
+
 export const pickupFormSchema = z.object({
   batchId: z.string().uuid(),
   vehicleId: z.string().uuid().optional().or(z.literal("")),

@@ -6,9 +6,19 @@ export type Role =
   | "OPERATOR"
   | "COMMUNITY_PARTNER";
 
+export type PickupRequestStatus =
+  | "PENDING_OPERATOR_RESPONSE"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "SCHEDULED"
+  | "IN_TRANSIT"
+  | "DELIVERED"
+  | "CANCELLED";
+
 export type BatchStatus =
   | "DRAFT"
   | "READY_FOR_PICKUP"
+  | "PICKUP_REQUESTED"
   | "PICKUP_SCHEDULED"
   | "IN_TRANSIT"
   | "DELIVERED"

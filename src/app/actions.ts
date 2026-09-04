@@ -22,8 +22,10 @@ import {
   conversionFormSchema,
   fulfilmentFormSchema,
   inspectionFormSchema,
-  pickupFormSchema,
+  pickupRequestFormSchema,
   quickBatchFromContainerSchema,
+  respondPickupRequestSchema,
+  schedulePickupLogisticsSchema,
 } from "@/lib/validation";
 
 function token() {
@@ -135,6 +137,7 @@ export async function createBatchAction(_: unknown, formData: FormData) {
       sourceId: parsed.data.sourceId,
       categoryId: parsed.data.categoryId,
       grossWeightKg: parsed.data.grossWeightKg,
+      declaredMassKg: parsed.data.grossWeightKg,
       collectionTimestamp: new Date(parsed.data.collectionTimestamp),
       responsibleUserId: user.id,
       storageStatus: parsed.data.storageStatus,
@@ -142,15 +145,6 @@ export async function createBatchAction(_: unknown, formData: FormData) {
       activityTimeline: [
         { status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: user.name },
       ],
-      pickupRequest: {
-        create: {
-          thresholdReason:
-            parsed.data.grossWeightKg >= 25
-              ? "Volume threshold reached"
-              : "Manual pickup request",
-          maxStorageWarning: parsed.data.storageStatus.toLowerCase().includes("overnight"),
-        },
-      },
       photos: parsed.data.photoUrl ? { create: { url: parsed.data.photoUrl } } : undefined,
     },
   });
@@ -170,50 +164,238 @@ export async function createBatchFormAction(formData: FormData) {
   await createBatchAction(null, formData);
 }
 
-export async function schedulePickupAction(_: unknown, formData: FormData) {
-  const user = await requireUser("schedule_pickup");
-  const parsed = pickupFormSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid pickup." };
+export async function createPickupRequestAction(_: unknown, formData: FormData) {
+  const user = await requireUser("request_pickup");
+  if (!user.organisationId) return { error: "User is not linked to an organisation." };
 
-  const before = await prisma.wasteBatch.findUniqueOrThrow({ where: { id: parsed.data.batchId } });
-  assertBatchTransition(before.status, "PICKUP_SCHEDULED");
+  const rawBatchIds = formData.getAll("batchIds").map(String);
+  const parsed = pickupRequestFormSchema.safeParse({
+    batchIds: rawBatchIds,
+    proposedPickupStart: String(formData.get("proposedPickupStart") ?? ""),
+    proposedPickupEnd: String(formData.get("proposedPickupEnd") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
+  });
+
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid pickup request data." };
+
+  const batches = await prisma.wasteBatch.findMany({
+    where: {
+      id: { in: parsed.data.batchIds },
+      sourceOrganisationId: user.organisationId,
+    },
+    include: { pickupRequestItem: true },
+  });
+
+  if (batches.length !== parsed.data.batchIds.length) {
+    return { error: "One or more selected batches were not found or belong to another organisation." };
+  }
+
+  for (const b of batches) {
+    if (b.status !== "READY_FOR_PICKUP" || b.pickupRequestItem) {
+      return { error: `Batch ${b.batchCode} is not eligible for pickup request (already requested or in transit).` };
+    }
+  }
+
+  const requestCode = `REQ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+  const request = await prisma.$transaction(async (tx) => {
+    const created = await tx.pickupRequest.create({
+      data: {
+        requestCode,
+        schoolOrganisationId: user.organisationId!,
+        requestedByUserId: user.id,
+        proposedPickupStart: new Date(parsed.data.proposedPickupStart),
+        proposedPickupEnd: new Date(parsed.data.proposedPickupEnd),
+        notes: parsed.data.notes || undefined,
+        status: "PENDING_OPERATOR_RESPONSE",
+        items: {
+          create: parsed.data.batchIds.map((batchId) => ({ batchId })),
+        },
+      },
+    });
+
+    for (const b of batches) {
+      await tx.wasteBatch.update({
+        where: { id: b.id },
+        data: {
+          status: "PICKUP_REQUESTED",
+          pickupStatus: "REQUESTED",
+          activityTimeline: [
+            ...(Array.isArray(b.activityTimeline) ? b.activityTimeline : []),
+            { status: "PICKUP_REQUESTED", at: new Date().toISOString(), actor: user.name },
+          ],
+        },
+      });
+    }
+
+    return created;
+  });
+
+  await audit({
+    actorId: user.id,
+    organisationId: user.organisationId,
+    action: "PICKUP_REQUESTED",
+    entityType: "PickupRequest",
+    entityId: request.id,
+    after: request,
+  });
+
+  revalidatePath("/operations/pickups");
+  revalidatePath("/batches");
+  revalidatePath("/school/dashboard");
+  return { success: true, message: `Pickup request ${requestCode} submitted successfully.` };
+}
+
+export async function createPickupRequestFormAction(formData: FormData) {
+  return await createPickupRequestAction(null, formData);
+}
+
+export async function respondPickupRequestAction(_: unknown, formData: FormData) {
+  const user = await requireUser("respond_pickup_request");
+  const parsed = respondPickupRequestSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid response." };
+
+  const request = await prisma.pickupRequest.findUniqueOrThrow({
+    where: { id: parsed.data.requestId },
+    include: { items: { include: { batch: true } } },
+  });
+
+  if (request.status !== "PENDING_OPERATOR_RESPONSE") {
+    return { error: `Request ${request.requestCode} has already been responded to (${request.status}).` };
+  }
+
+  if (parsed.data.decision === "ACCEPT") {
+    await prisma.$transaction(async (tx) => {
+      await tx.pickupRequest.update({
+        where: { id: request.id },
+        data: {
+          status: "ACCEPTED",
+          acceptedAt: new Date(),
+          respondedAt: new Date(),
+          respondedByUserId: user.id,
+          operatorOrgId: user.organisationId ?? undefined,
+        },
+      });
+    });
+
+    await audit({
+      actorId: user.id,
+      organisationId: user.organisationId,
+      action: "PICKUP_REQUEST_ACCEPTED",
+      entityType: "PickupRequest",
+      entityId: request.id,
+      after: { status: "ACCEPTED" },
+    });
+  } else {
+    await prisma.$transaction(async (tx) => {
+      await tx.pickupRequest.update({
+        where: { id: request.id },
+        data: {
+          status: "REJECTED",
+          rejectionReason: parsed.data.rejectionReason,
+          respondedAt: new Date(),
+          respondedByUserId: user.id,
+          operatorOrgId: user.organisationId ?? undefined,
+        },
+      });
+
+      for (const item of request.items) {
+        await tx.wasteBatch.update({
+          where: { id: item.batchId },
+          data: {
+            status: "READY_FOR_PICKUP",
+            pickupStatus: "REQUESTED",
+            activityTimeline: [
+              ...(Array.isArray(item.batch.activityTimeline) ? item.batch.activityTimeline : []),
+              { status: "REJECTED", at: new Date().toISOString(), actor: user.name, reason: parsed.data.rejectionReason },
+            ],
+          },
+        });
+      }
+    });
+
+    await audit({
+      actorId: user.id,
+      organisationId: user.organisationId,
+      action: "PICKUP_REQUEST_REJECTED",
+      entityType: "PickupRequest",
+      entityId: request.id,
+      reason: parsed.data.rejectionReason,
+    });
+  }
+
+  revalidatePath("/operations/pickups");
+  revalidatePath("/operator/dashboard");
+  revalidatePath("/school/dashboard");
+  return { success: true };
+}
+
+export async function respondPickupRequestFormAction(formData: FormData) {
+  return await respondPickupRequestAction(null, formData);
+}
+
+export async function schedulePickupLogisticsAction(_: unknown, formData: FormData) {
+  const user = await requireUser("manage_pickup_logistics");
+  const parsed = schedulePickupLogisticsSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid logistics schedule." };
+
+  const request = await prisma.pickupRequest.findUniqueOrThrow({
+    where: { id: parsed.data.requestId },
+    include: { items: { include: { batch: true } } },
+  });
+
+  if (request.status !== "ACCEPTED" && request.status !== "SCHEDULED") {
+    return { error: "Pickup request must be ACCEPTED before scheduling logistics." };
+  }
 
   await prisma.$transaction(async (tx) => {
+    await tx.pickupRequest.update({
+      where: { id: request.id },
+      data: {
+        status: "SCHEDULED",
+        actualScheduledAt: new Date(parsed.data.actualScheduledAt),
+      },
+    });
+
     await tx.pickup.upsert({
-      where: { batchId: parsed.data.batchId },
+      where: { pickupRequestId: request.id },
       create: {
-        batchId: parsed.data.batchId,
+        pickupRequestId: request.id,
         vehicleId: parsed.data.vehicleId || undefined,
         operatorOrgId: user.organisationId!,
-        scheduledAt: new Date(parsed.data.scheduledAt),
+        scheduledAt: new Date(parsed.data.actualScheduledAt),
         routeNotes: parsed.data.routeNotes,
         distanceKm: parsed.data.distanceKm,
         status: "SCHEDULED",
       },
       update: {
         vehicleId: parsed.data.vehicleId || undefined,
-        scheduledAt: new Date(parsed.data.scheduledAt),
+        scheduledAt: new Date(parsed.data.actualScheduledAt),
         routeNotes: parsed.data.routeNotes,
         distanceKm: parsed.data.distanceKm,
         status: "SCHEDULED",
       },
     });
-    await tx.wasteBatch.update({
-      where: { id: parsed.data.batchId },
-      data: {
-        status: "PICKUP_SCHEDULED",
-        pickupStatus: "SCHEDULED",
-        activityTimeline: [
-          ...(Array.isArray(before.activityTimeline) ? before.activityTimeline : []),
-          { status: "PICKUP_SCHEDULED", at: new Date().toISOString(), actor: user.name },
-        ],
-      },
-    });
-    if (before.containerId) {
-      await tx.wasteContainer.update({
-        where: { id: before.containerId },
-        data: { status: "SCHEDULED" },
+
+    for (const item of request.items) {
+      await tx.wasteBatch.update({
+        where: { id: item.batchId },
+        data: {
+          status: "PICKUP_SCHEDULED",
+          pickupStatus: "SCHEDULED",
+          activityTimeline: [
+            ...(Array.isArray(item.batch.activityTimeline) ? item.batch.activityTimeline : []),
+            { status: "PICKUP_SCHEDULED", at: new Date().toISOString(), actor: user.name },
+          ],
+        },
       });
+
+      if (item.batch.containerId) {
+        await tx.wasteContainer.update({
+          where: { id: item.batch.containerId },
+          data: { status: "SCHEDULED" },
+        });
+      }
     }
   });
 
@@ -221,20 +403,70 @@ export async function schedulePickupAction(_: unknown, formData: FormData) {
     actorId: user.id,
     organisationId: user.organisationId,
     action: "PICKUP_SCHEDULED",
-    entityType: "WasteBatch",
-    entityId: parsed.data.batchId,
-    before,
-    after: { status: "PICKUP_SCHEDULED" },
+    entityType: "PickupRequest",
+    entityId: request.id,
+    after: { status: "SCHEDULED" },
   });
+
   revalidatePath("/operations/pickups");
+  return { success: true };
 }
 
-export async function schedulePickupFormAction(formData: FormData) {
-  await schedulePickupAction(null, formData);
+export async function schedulePickupLogisticsFormAction(formData: FormData) {
+  return await schedulePickupLogisticsAction(null, formData);
+}
+
+export async function confirmRequestDeliveryAction(requestId: string, target: "IN_TRANSIT" | "DELIVERED") {
+  const user = await requireUser("manage_pickup_logistics");
+  const request = await prisma.pickupRequest.findUniqueOrThrow({
+    where: { id: requestId },
+    include: { pickup: true, items: { include: { batch: true } } },
+  });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.pickupRequest.update({
+      where: { id: requestId },
+      data: { status: target },
+    });
+
+    if (request.pickup) {
+      await tx.pickup.update({
+        where: { id: request.pickup.id },
+        data: {
+          status: target === "DELIVERED" ? "DELIVERED" : "IN_TRANSIT",
+          completedAt: target === "DELIVERED" ? new Date() : undefined,
+        },
+      });
+    }
+
+    for (const item of request.items) {
+      await tx.wasteBatch.update({
+        where: { id: item.batchId },
+        data: {
+          status: target,
+          pickupStatus: target === "DELIVERED" ? "DELIVERED" : "IN_TRANSIT",
+          activityTimeline: [
+            ...(Array.isArray(item.batch.activityTimeline) ? item.batch.activityTimeline : []),
+            { status: target, at: new Date().toISOString(), actor: user.name },
+          ],
+        },
+      });
+
+      if (item.batch.containerId) {
+        await tx.wasteContainer.update({
+          where: { id: item.batch.containerId },
+          data: { status: target === "IN_TRANSIT" ? "IN_TRANSIT" : "AT_FACILITY" },
+        });
+      }
+    }
+  });
+
+  revalidatePath("/operations/pickups");
+  revalidatePath("/batches");
 }
 
 export async function confirmDeliveryAction(batchId: string) {
-  const user = await requireUser("schedule_pickup");
+  const user = await requireUser("manage_pickup_logistics");
   const before = await prisma.wasteBatch.findUniqueOrThrow({ where: { id: batchId } });
   const target = before.status === "PICKUP_SCHEDULED" ? "IN_TRANSIT" : "DELIVERED";
   assertBatchTransition(before.status, target);
@@ -703,15 +935,6 @@ export async function createBatchFromContainerAction(_: unknown, formData: FormD
         activityTimeline: [
           { status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: user.name },
         ],
-        pickupRequest: {
-          create: {
-            thresholdReason:
-              parsed.data.declaredMassKg >= 25
-                ? "Volume threshold reached"
-                : "Manual pickup request via container scan",
-            maxStorageWarning: false,
-          },
-        },
         photos: parsed.data.photoUrl ? { create: { url: parsed.data.photoUrl } } : undefined,
       },
     });

@@ -45,9 +45,9 @@ const groups = [
     items: [
       { href: "/admin/containers", label: "QR Containers", icon: QrCode, permission: "manage_containers" as const },
       { href: "/batches", label: "Waste Batches", icon: QrCode },
-      { href: "/batches/new", label: "Create Batch", icon: Recycle, permission: "create_batch" as const },
+      { href: "/batches/new", label: "Register Organic Load", icon: Recycle, permission: "create_waste_record" as const },
       { href: "/scan", label: "QR Scanner", icon: ScanLine },
-      { href: "/operations/pickups", label: "Pickups", icon: CalendarCheck, permission: "schedule_pickup" as const },
+      { href: "/operations/pickups", label: "Pickups", icon: CalendarCheck, permission: "view_reports" as const },
       { href: "/operations/inspections", label: "Inspections", icon: ClipboardCheck, permission: "inspect_batch" as const },
     ],
   },
@@ -55,8 +55,8 @@ const groups = [
     label: "Energy Operations",
     items: [
       { href: "/operations/conversions", label: "Conversion Cycles", icon: Factory, permission: "record_conversion" as const },
-      { href: "/operations/allocations", label: "Allocations", icon: Zap, permission: "calculate_allocation" as const },
-      { href: "/operations/fulfilment", label: "Fulfilment", icon: Gauge, permission: "fulfil_allocation" as const },
+      { href: "/operations/allocations", label: "Allocations", icon: Zap, permission: "view_reports" as const },
+      { href: "/operations/fulfilment", label: "Fulfilment", icon: Gauge, permission: "view_reports" as const },
     ],
   },
   {

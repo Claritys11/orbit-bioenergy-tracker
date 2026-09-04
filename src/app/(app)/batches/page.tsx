@@ -1,25 +1,38 @@
 import Link from "next/link";
+import { Badge, Card, LinkButton, PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/db";
+import { can } from "@/lib/domain/rbac";
+import type { Role } from "@/lib/domain/types";
 import { requireUser } from "@/lib/services/authz";
 import { formatKg, humanise } from "@/lib/utils";
-import { Badge, Card, LinkButton, PageHeader } from "@/components/ui";
 
 export default async function BatchesPage() {
-  const user = await requireUser();
+  const user = await requireUser("view_batches");
+  const role = user.role as Role;
+
+  const canCreateWasteRecord = can(role, "create_waste_record") || can(role, "create_batch");
+
   const batches = await prisma.wasteBatch.findMany({
     where:
-      user.role === "SUPER_ADMIN" || user.role === "OPERATOR"
+      role === "SUPER_ADMIN" || role === "OPERATOR"
         ? {}
-        : { sourceOrganisationId: user.organisationId },
+        : user.organisationId
+          ? { sourceOrganisationId: user.organisationId }
+          : {},
     include: { category: true, sourceOrganisation: true, inspection: true },
     orderBy: { createdAt: "desc" },
   });
+
   return (
     <div className="grid gap-6">
       <PageHeader
         title="Waste Batch Register"
         description="Trace every organic-waste batch from source registration through pickup, inspection, conversion, allocation, and closure."
-        action={<LinkButton href="/batches/new">Create batch</LinkButton>}
+        action={
+          canCreateWasteRecord ? (
+            <LinkButton href="/batches/new">Register Organic Load</LinkButton>
+          ) : undefined
+        }
       />
       <Card>
         <div className="overflow-x-auto">
@@ -44,7 +57,11 @@ export default async function BatchesPage() {
                   </td>
                   <td>{batch.sourceOrganisation.name}</td>
                   <td>{batch.category.name}</td>
-                  <td><Badge tone={batch.status === "REJECTED" ? "red" : batch.status === "CONDITIONAL" ? "amber" : "green"}>{humanise(batch.status)}</Badge></td>
+                  <td>
+                    <Badge tone={batch.status === "REJECTED" ? "red" : batch.status === "CONDITIONAL" ? "amber" : "green"}>
+                      {humanise(batch.status)}
+                    </Badge>
+                  </td>
                   <td>{formatKg(batch.grossWeightKg)}</td>
                   <td>{batch.inspection ? formatKg(batch.inspection.acceptedMassKg) : "Pending"}</td>
                 </tr>

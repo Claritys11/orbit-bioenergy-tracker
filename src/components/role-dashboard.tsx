@@ -20,43 +20,46 @@ import { formatGas, formatKg } from "@/lib/utils";
 const roleCopy = {
   SUPER_ADMIN: [
     "Super Admin Dashboard",
-    "System-wide data quality, facility validation, allocation configuration, unresolved safety events, and audit activity.",
+    "System-wide data quality, partner management, allocation configuration, unresolved safety events, and audit activity.",
   ],
   SCHOOL_ADMIN: [
     "School Admin Dashboard",
-    "Accepted school waste, contamination trend, allocation, fulfilment, estimated savings, upcoming pickups, and student participation.",
+    "Manage accumulated ready organic waste, create multi-item pickup requests, monitor operator acceptance, and track energy credits.",
   ],
   CANTEEN_STAFF: [
     "Canteen Staff Dashboard",
-    "Mobile-first next actions for creating batches, preparing pickup, and learning from inspection feedback.",
+    "Scan assigned reusable QR containers, enter declared weight & category, and register today's organic waste loads.",
   ],
   STUDENT: [
     "Student Dashboard",
     "Waste journey, sorting accuracy, contamination reduction, class learning, and school impact without gas-equipment instructions.",
   ],
   OPERATOR: [
-    "Logistics Operator Dashboard",
-    "Organics pickup routes, vehicle fleet schedule, and QR-tagged container collection monitoring.",
+    "Bioenergy Operator Dashboard",
+    "Manage incoming school pickup requests, vehicle fleet routing, facility contamination inspections, conversion cycles, and gas fulfilment.",
   ],
   COMMUNITY_PARTNER: [
-    "Community Biogas Hub Dashboard",
-    "Feedstock quality inspection, conversion cycles, verified biogas measurement, allocation fulfilment, and digester safety.",
+    "Community Partner Showcase",
+    "Monitor community energy benefits, local allocation fulfilment, facility throughput performance, and public sustainability impact.",
   ],
 } as const;
 
 const nextActions: Record<Role, Array<{ label: string; href: string; permission?: Permission }>> = {
   SUPER_ADMIN: [
-    { label: "Manage organisations", href: "/admin/users", permission: "manage_org" },
+    { label: "Manage partner organisations", href: "/admin/users", permission: "manage_org" },
+    { label: "Manage QR containers", href: "/admin/containers", permission: "manage_containers" },
     { label: "Review audit logs", href: "/admin/audit", permission: "view_audit" },
     { label: "Open impact report", href: "/reports/impact", permission: "view_reports" },
   ],
   SCHOOL_ADMIN: [
+    { label: "Request pickup for ready waste", href: "/operations/pickups", permission: "request_pickup" },
+    { label: "Review school batches", href: "/batches" },
     { label: "Open impact report", href: "/reports/impact", permission: "view_reports" },
     { label: "Open sustainability report", href: "/reports/sustainability", permission: "view_reports" },
-    { label: "Review school batches", href: "/batches" },
   ],
   CANTEEN_STAFF: [
-    { label: "Create Batch", href: "/batches/new", permission: "create_batch" },
+    { label: "Register Organic Load", href: "/batches/new", permission: "create_waste_record" },
+    { label: "Scan QR Container", href: "/scan" },
     { label: "Review batches", href: "/batches" },
   ],
   STUDENT: [
@@ -64,15 +67,16 @@ const nextActions: Record<Role, Array<{ label: string; href: string; permission?
     { label: "View public impact", href: "/impact" },
   ],
   OPERATOR: [
-    { label: "Schedule pickup route", href: "/operations/pickups", permission: "schedule_pickup" },
-    { label: "Scan QR Container", href: "/scan" },
-    { label: "Pickup & logistics report", href: "/reports/impact", permission: "view_reports" },
-  ],
-  COMMUNITY_PARTNER: [
-    { label: "Quality & contamination inspection", href: "/operations/inspections", permission: "inspect_batch" },
+    { label: "Incoming pickup requests", href: "/operations/pickups", permission: "respond_pickup_request" },
+    { label: "Facility quality inspection", href: "/operations/inspections", permission: "inspect_batch" },
     { label: "Record conversion cycle & gas", href: "/operations/conversions", permission: "record_conversion" },
     { label: "Calculate energy allocation", href: "/operations/allocations", permission: "calculate_allocation" },
     { label: "Fulfil energy allocation", href: "/operations/fulfilment", permission: "fulfil_allocation" },
+  ],
+  COMMUNITY_PARTNER: [
+    { label: "View community allocations", href: "/operations/allocations", permission: "view_reports" },
+    { label: "View fulfilment status", href: "/operations/fulfilment", permission: "view_reports" },
+    { label: "Open impact report", href: "/reports/impact", permission: "view_reports" },
   ],
 };
 
@@ -84,10 +88,10 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
     user.role === "SUPER_ADMIN" || user.role === "OPERATOR" || user.role === "COMMUNITY_PARTNER"
       ? {}
       : { sourceOrganisationId: user.organisationId };
-  const [batches, inspections, cycles, allocations, alerts, auditLogs, orgs] = await Promise.all([
+  const [batches, inspections, cycles, allocations, alerts, auditLogs, orgs, pendingRequests] = await Promise.all([
     prisma.wasteBatch.findMany({
       where: batchWhere,
-      include: { category: true, inspection: true, sourceOrganisation: true, pickup: true },
+      include: { category: true, inspection: true, sourceOrganisation: true },
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
@@ -95,7 +99,7 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
     prisma.conversionCycle.findMany({ orderBy: { createdAt: "desc" }, take: 4 }),
     prisma.energyAllocation.findMany({
       where:
-        user.role === "SUPER_ADMIN" || user.role === "OPERATOR"
+        user.role === "SUPER_ADMIN" || user.role === "OPERATOR" || user.role === "COMMUNITY_PARTNER"
           ? {}
           : { recipientOrgId: user.organisationId },
       include: { fulfilments: true },
@@ -103,6 +107,10 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
     prisma.safetyAlert.findMany({ where: { resolvedAt: null }, orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.organisation.findMany(),
+    prisma.pickupRequest.findMany({
+      where: { status: "PENDING_OPERATOR_RESPONSE" },
+      include: { items: true },
+    }),
   ]);
 
   const acceptedMass = inspections.reduce((sum, item) => sum + item.acceptedMassKg, 0);
@@ -124,7 +132,9 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
         description={description}
         action={
           user.role === "CANTEEN_STAFF" ? (
-            <LinkButton href="/batches/new">Create Batch</LinkButton>
+            <LinkButton href="/batches/new">Register Load</LinkButton>
+          ) : user.role === "SCHOOL_ADMIN" ? (
+            <LinkButton href="/operations/pickups">Request Pickup</LinkButton>
           ) : (
             <LinkButton href="/transparency" variant="secondary">
               Public transparency
@@ -136,30 +146,56 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
         <Metric label="Accepted organic waste" value={formatKg(acceptedMass)} hint="Operator-inspected accepted mass." />
         <Metric label="Verified biogas" value={formatGas(verifiedGas)} hint="Measured cycle records, not estimates." />
         <Metric label="Allocated biogas" value={formatGas(allocation)} hint="Finalised allocation versions." />
-        <Metric label="Fulfilled biogas" value={formatGas(fulfilled)} hint="Unfulfilled allocation is not delivered energy." />
+        <Metric label="Fulfilled biogas" value={formatGas(fulfilled)} hint="Delivered energy output." />
       </div>
 
       {user.role === "CANTEEN_STAFF" ? (
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <QrCode className="text-[var(--orbit-primary)]" />
-            <h2 className="mt-3 font-bold">Create the next QR batch</h2>
-            <p className="mt-2 text-sm text-slate-600">Register only source-separated organics ready for pickup.</p>
+            <h2 className="mt-3 font-bold">Register Container Load</h2>
+            <p className="mt-2 text-sm text-slate-600">Scan assigned reusable container QR tags to enter today&apos;s organic waste weight.</p>
             <LinkButton href="/batches/new" className="mt-4">
-              Create Batch
+              Register Load
             </LinkButton>
           </Card>
           <Card>
             <Truck className="text-[var(--orbit-secondary)]" />
-            <h2 className="mt-3 font-bold">Waiting for pickup</h2>
+            <h2 className="mt-3 font-bold">Ready containers</h2>
             <p className="mt-2 text-2xl font-bold">{waitingPickup}</p>
-            <p className="text-sm text-slate-600">Prepare covered bins and labels.</p>
+            <p className="text-sm text-slate-600">Containers prepared in canteen storage bay.</p>
           </Card>
           <Card>
             <ClipboardCheck className="text-red-700" />
-            <h2 className="mt-3 font-bold">Feedback to improve</h2>
+            <h2 className="mt-3 font-bold">Inspection feedback</h2>
             <p className="mt-2 text-2xl font-bold">{rejected}</p>
-            <p className="text-sm text-slate-600">Rejected demo inspections indicate sorting issues.</p>
+            <p className="text-sm text-slate-600">Sorting contamination feedback from facility operators.</p>
+          </Card>
+        </div>
+      ) : null}
+
+      {user.role === "OPERATOR" ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-l-4 border-l-amber-500">
+            <Truck className="text-amber-600" />
+            <h2 className="mt-3 font-bold">Pending Pickup Requests</h2>
+            <p className="mt-2 text-3xl font-extrabold text-amber-600">{pendingRequests.length}</p>
+            <p className="text-sm text-slate-600">Collection requests awaiting operator review.</p>
+            <LinkButton href="/operations/pickups" className="mt-4" variant="secondary">
+              Review Requests
+            </LinkButton>
+          </Card>
+          <Card>
+            <Factory className="text-[var(--orbit-primary)]" />
+            <h2 className="mt-3 font-bold">Verified Biogas Cycles</h2>
+            <p className="mt-2 text-3xl font-extrabold text-black">{cycles.length}</p>
+            <p className="text-sm text-slate-600">Completed conversion batches at facility.</p>
+          </Card>
+          <Card>
+            <ShieldAlert className="text-slate-700" />
+            <h2 className="mt-3 font-bold">Biodigester Safety</h2>
+            <p className="mt-2 text-3xl font-extrabold text-black">{alerts.length}</p>
+            <p className="text-sm text-slate-600">Active facility pressure & safety alerts.</p>
           </Card>
         </div>
       ) : null}
@@ -218,7 +254,7 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
         <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
           <Card>
             <h2 className="text-lg font-bold text-slate-950">
-              {user.role === "OPERATOR" ? "Incoming feedstock and inspections" : "Recent contribution records"}
+              {user.role === "OPERATOR" ? "Recent feedstock batches" : "Recent contribution records"}
             </h2>
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-sm">

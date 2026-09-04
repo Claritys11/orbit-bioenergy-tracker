@@ -46,6 +46,7 @@ enum ContainerStatus {
 enum BatchStatus {
   DRAFT
   READY_FOR_PICKUP
+  PICKUP_REQUESTED
   PICKUP_SCHEDULED
   IN_TRANSIT
   DELIVERED
@@ -55,6 +56,16 @@ enum BatchStatus {
   REJECTED
   PROCESSED
   CLOSED
+}
+
+enum PickupRequestStatus {
+  PENDING_OPERATOR_RESPONSE
+  ACCEPTED
+  REJECTED
+  SCHEDULED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
 }
 
 enum InspectionDecision {
@@ -120,9 +131,11 @@ model User {
   accounts      Account[]
   sessions      Session[]
   memberships   OrganisationMembership[]
-  batches       WasteBatch[]              @relation("ResponsibleUser")
-  inspections   ContaminationInspection[] @relation("Inspector")
-  auditLogs      AuditLog[]                @relation("ActorAudit")
+  batches              WasteBatch[]              @relation("ResponsibleUser")
+  inspections          ContaminationInspection[] @relation("Inspector")
+  requestedPickups     PickupRequest[]           @relation("RequestedBy")
+  respondedPickups     PickupRequest[]           @relation("RespondedBy")
+  auditLogs            AuditLog[]                @relation("ActorAudit")
   notifications Notification[]
 
   @@index([role])
@@ -177,10 +190,11 @@ model Organisation {
   school      School?
   facility    PartnerFacility?
   canteens    Canteen[]
-  sources     WasteSource[]
-  containers  WasteContainer[]
-  batches     WasteBatch[]
-  contributor SupportingContributor?
+  sources              WasteSource[]
+  containers           WasteContainer[]
+  batches              WasteBatch[]
+  schoolPickupRequests PickupRequest[]           @relation("SchoolPickupRequests")
+  contributor          SupportingContributor?
   auditLogs   AuditLog[]
 }
 
@@ -306,8 +320,7 @@ model WasteBatch {
   responsibleUser    User              @relation("ResponsibleUser", fields: [responsibleUserId], references: [id])
   photos             BatchPhoto[]
   inspection         ContaminationInspection?
-  pickupRequest      PickupRequest?
-  pickup             Pickup?
+  pickupRequestItem  PickupRequestItem?
   conversionBatches  ConversionBatch[]
   contributionScores ContributionScore[]
 
@@ -347,13 +360,40 @@ model ContaminationInspection {
 }
 
 model PickupRequest {
-  id              String   @id @default(uuid())
-  batchId         String   @unique
-  requestedAt     DateTime @default(now())
-  thresholdReason String
-  maxStorageWarning Boolean @default(false)
+  id                    String              @id @default(uuid())
+  requestCode          String              @unique
+  schoolOrganisationId String
+  requestedByUserId     String
+  requestedAt           DateTime            @default(now())
+  proposedPickupStart   DateTime
+  proposedPickupEnd     DateTime
+  status                PickupRequestStatus @default(PENDING_OPERATOR_RESPONSE)
+  notes                 String?
+  operatorOrgId         String?
+  respondedByUserId     String?
+  respondedAt           DateTime?
+  rejectionReason       String?
+  acceptedAt            DateTime?
+  actualScheduledAt     DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
-  batch WasteBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  schoolOrganisation Organisation        @relation("SchoolPickupRequests", fields: [schoolOrganisationId], references: [id])
+  requestedByUser    User                @relation("RequestedBy", fields: [requestedByUserId], references: [id])
+  respondedByUser    User?               @relation("RespondedBy", fields: [respondedByUserId], references: [id])
+  items              PickupRequestItem[]
+  pickup             Pickup?
+
+  @@index([schoolOrganisationId, status])
+}
+
+model PickupRequestItem {
+  id              String   @id @default(uuid())
+  pickupRequestId String
+  batchId         String   @unique
+
+  pickupRequest PickupRequest @relation(fields: [pickupRequestId], references: [id], onDelete: Cascade)
+  batch         WasteBatch    @relation(fields: [batchId], references: [id])
 }
 
 model Vehicle {
@@ -368,19 +408,19 @@ model Vehicle {
 }
 
 model Pickup {
-  id             String       @id @default(uuid())
-  batchId        String       @unique
-  vehicleId      String?
-  operatorOrgId  String
-  scheduledAt    DateTime
-  completedAt    DateTime?
-  routeNotes     String
-  distanceKm     Float
-  status         PickupStatus
-  failedReason   String?
+  id              String       @id @default(uuid())
+  pickupRequestId String       @unique
+  vehicleId       String?
+  operatorOrgId   String
+  scheduledAt     DateTime
+  completedAt     DateTime?
+  routeNotes      String
+  distanceKm      Float        @default(0)
+  status          PickupStatus @default(SCHEDULED)
+  failedReason    String?
 
-  batch   WasteBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  vehicle Vehicle?   @relation(fields: [vehicleId], references: [id])
+  pickupRequest PickupRequest @relation(fields: [pickupRequestId], references: [id], onDelete: Cascade)
+  vehicle       Vehicle?       @relation(fields: [vehicleId], references: [id])
 }
 
 model ConversionCycle {

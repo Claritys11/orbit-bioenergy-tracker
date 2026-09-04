@@ -154,11 +154,13 @@ export function TextareaField({
   name,
   required,
   defaultValue,
+  placeholder,
 }: {
   label: string;
   name: string;
   required?: boolean;
   defaultValue?: string;
+  placeholder?: string;
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-medium text-slate-800">
@@ -167,6 +169,7 @@ export function TextareaField({
         name={name}
         required={required}
         defaultValue={defaultValue}
+        placeholder={placeholder}
         rows={4}
         className="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm"
       />
