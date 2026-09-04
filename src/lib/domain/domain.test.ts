@@ -3,6 +3,7 @@ import { calculateAllocations, calculateContribution } from "./allocation";
 import { calculateContamination } from "./contamination";
 import { canTransitionContainer } from "./container";
 import { can } from "./rbac";
+import { canTransitionBatch } from "./status";
 
 describe("contamination calculation", () => {
   it("calculates contamination rate and accepted mass", () => {
@@ -15,6 +16,47 @@ describe("contamination calculation", () => {
     expect(result.contaminationRate).toBe(8);
     expect(result.acceptedMassKg).toBe(92);
     expect(result.decision).toBe("CONDITIONAL");
+  });
+
+  it("calculates exact community inspection metrics: gross 18.4, rejected 2.1", () => {
+    const result = calculateContamination({
+      verifiedGrossMassKg: 18.4,
+      rejectedMassKg: 2.1,
+      warningThresholdPercent: 8,
+      rejectThresholdPercent: 30,
+    });
+    expect(result.acceptedMassKg).toBe(16.3);
+    expect(result.contaminationRate).toBe(11.41);
+    expect(result.decision).toBe("CONDITIONAL");
+  });
+
+  it("throws for invalid weight metrics: zero gross, negative rejected, rejected exceeding gross", () => {
+    expect(() =>
+      calculateContamination({
+        verifiedGrossMassKg: 0,
+        rejectedMassKg: 0,
+        warningThresholdPercent: 8,
+        rejectThresholdPercent: 30,
+      }),
+    ).toThrow(/greater than zero/);
+
+    expect(() =>
+      calculateContamination({
+        verifiedGrossMassKg: 18.4,
+        rejectedMassKg: 20,
+        warningThresholdPercent: 8,
+        rejectThresholdPercent: 30,
+      }),
+    ).toThrow(/between zero and verified gross mass/);
+
+    expect(() =>
+      calculateContamination({
+        verifiedGrossMassKg: 18.4,
+        rejectedMassKg: -1,
+        warningThresholdPercent: 8,
+        rejectThresholdPercent: 30,
+      }),
+    ).toThrow(/between zero and verified gross mass/);
   });
 
   it("rejects unsafe or heavily contaminated material with zero contribution", () => {
@@ -165,30 +207,46 @@ describe("permissions & capabilities", () => {
     expect(can("SCHOOL_ADMIN", "fulfil_allocation")).toBe(false);
   });
 
-  it("assigns operational logistics, inspection, conversion, allocation, and fulfilment to OPERATOR", () => {
+  it("assigns operational logistics to OPERATOR and restricts facility processing", () => {
     expect(can("OPERATOR", "respond_pickup_request")).toBe(true);
     expect(can("OPERATOR", "manage_pickup_logistics")).toBe(true);
-    expect(can("OPERATOR", "inspect_batch")).toBe(true);
-    expect(can("OPERATOR", "record_conversion")).toBe(true);
-    expect(can("OPERATOR", "calculate_allocation")).toBe(true);
-    expect(can("OPERATOR", "fulfil_allocation")).toBe(true);
-    expect(can("OPERATOR", "manage_safety")).toBe(true);
+    expect(can("OPERATOR", "inspect_batch")).toBe(false);
+    expect(can("OPERATOR", "record_conversion")).toBe(false);
+    expect(can("OPERATOR", "calculate_allocation")).toBe(false);
+    expect(can("OPERATOR", "fulfil_allocation")).toBe(false);
+    expect(can("OPERATOR", "manage_safety")).toBe(false);
+    expect(can("OPERATOR", "receive_container")).toBe(false);
     expect(can("OPERATOR", "request_pickup")).toBe(false);
   });
 
-  it("restricts COMMUNITY_PARTNER to read-only report monitoring", () => {
+  it("assigns facility processing, inspection, conversion, receiving, and fulfilment to COMMUNITY_PARTNER", () => {
+    expect(can("COMMUNITY_PARTNER", "receive_container")).toBe(true);
+    expect(can("COMMUNITY_PARTNER", "inspect_batch")).toBe(true);
+    expect(can("COMMUNITY_PARTNER", "record_conversion")).toBe(true);
+    expect(can("COMMUNITY_PARTNER", "fulfil_allocation")).toBe(true);
+    expect(can("COMMUNITY_PARTNER", "manage_safety")).toBe(true);
     expect(can("COMMUNITY_PARTNER", "view_reports")).toBe(true);
-    expect(can("COMMUNITY_PARTNER", "inspect_batch")).toBe(false);
-    expect(can("COMMUNITY_PARTNER", "record_conversion")).toBe(false);
-    expect(can("COMMUNITY_PARTNER", "calculate_allocation")).toBe(false);
-    expect(can("COMMUNITY_PARTNER", "fulfil_allocation")).toBe(false);
+    expect(can("COMMUNITY_PARTNER", "respond_pickup_request")).toBe(false);
+    expect(can("COMMUNITY_PARTNER", "manage_pickup_logistics")).toBe(false);
+    expect(can("COMMUNITY_PARTNER", "request_pickup")).toBe(false);
   });
 
-  it("allows CANTEEN_STAFF to register waste loads", () => {
+  it("allows CANTEEN_STAFF to register waste loads but prevents inspection, conversion, logistics, and scanner", () => {
     expect(can("CANTEEN_STAFF", "create_waste_record")).toBe(true);
     expect(can("CANTEEN_STAFF", "create_batch")).toBe(true);
     expect(can("CANTEEN_STAFF", "request_pickup")).toBe(false);
     expect(can("CANTEEN_STAFF", "inspect_batch")).toBe(false);
+    expect(can("CANTEEN_STAFF", "record_conversion")).toBe(false);
+    expect(can("CANTEEN_STAFF", "receive_container")).toBe(false);
+  });
+
+  it("restricts STUDENT to read-only learning without operational mutation capabilities", () => {
+    expect(can("STUDENT", "view_student")).toBe(true);
+    expect(can("STUDENT", "create_waste_record")).toBe(false);
+    expect(can("STUDENT", "request_pickup")).toBe(false);
+    expect(can("STUDENT", "inspect_batch")).toBe(false);
+    expect(can("STUDENT", "record_conversion")).toBe(false);
+    expect(can("STUDENT", "receive_container")).toBe(false);
   });
 
   it("allows only SUPER_ADMIN to manage containers and issue QR", () => {
@@ -196,6 +254,30 @@ describe("permissions & capabilities", () => {
     expect(can("SUPER_ADMIN", "issue_qr")).toBe(true);
     expect(can("CANTEEN_STAFF", "manage_containers")).toBe(false);
     expect(can("SCHOOL_ADMIN", "manage_containers")).toBe(false);
+    expect(can("OPERATOR", "manage_containers")).toBe(false);
+  });
+});
+
+describe("batch state transitions", () => {
+  it("enforces canonical state transitions from registration to processing", () => {
+    expect(canTransitionBatch("READY_FOR_PICKUP", "PICKUP_REQUESTED")).toBe(true);
+    expect(canTransitionBatch("PICKUP_REQUESTED", "PICKUP_SCHEDULED")).toBe(true);
+    expect(canTransitionBatch("PICKUP_SCHEDULED", "IN_TRANSIT")).toBe(true);
+    expect(canTransitionBatch("IN_TRANSIT", "DELIVERED")).toBe(true);
+    expect(canTransitionBatch("DELIVERED", "UNDER_INSPECTION")).toBe(true);
+    expect(canTransitionBatch("UNDER_INSPECTION", "ACCEPTED")).toBe(true);
+    expect(canTransitionBatch("UNDER_INSPECTION", "CONDITIONAL")).toBe(true);
+    expect(canTransitionBatch("UNDER_INSPECTION", "REJECTED")).toBe(true);
+    expect(canTransitionBatch("ACCEPTED", "PROCESSED")).toBe(true);
+    expect(canTransitionBatch("CONDITIONAL", "PROCESSED")).toBe(true);
+  });
+
+  it("rejects invalid state jumps", () => {
+    expect(canTransitionBatch("READY_FOR_PICKUP", "PROCESSED")).toBe(false);
+    expect(canTransitionBatch("READY_FOR_PICKUP", "ACCEPTED")).toBe(false);
+    expect(canTransitionBatch("IN_TRANSIT", "UNDER_INSPECTION")).toBe(false);
+    expect(canTransitionBatch("REJECTED", "PROCESSED")).toBe(false);
+    expect(canTransitionBatch("DELIVERED", "PROCESSED")).toBe(false);
   });
 });
 

@@ -3,7 +3,7 @@ import { QrLabel } from "@/components/qr-label";
 import { Badge, Card, LinkButton, PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/services/authz";
-import { formatKg, humanise } from "@/lib/utils";
+import { formatGas, formatKg, humanise } from "@/lib/utils";
 
 export default async function BatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireUser();
@@ -49,25 +49,75 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
           <Card>
             <div className="grid gap-4 md:grid-cols-4">
               <div>
-                <p className="text-sm text-slate-500">Status</p>
-                <Badge tone={batch.status === "REJECTED" ? "red" : "green"}>{humanise(batch.status)}</Badge>
+                <p className="text-sm text-slate-500">Lifecycle Status</p>
+                <Badge tone={batch.status === "REJECTED" ? "red" : batch.status === "CONDITIONAL" ? "amber" : "green"}>
+                  {humanise(batch.status)}
+                </Badge>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Gross weight</p>
-                <p className="font-bold">{formatKg(batch.grossWeightKg)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Source</p>
+                <p className="text-sm text-slate-500">Source Organisation</p>
                 <p className="font-bold">{batch.sourceOrganisation.name}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-500">Category</p>
+                <p className="text-sm text-slate-500">Feedstock Category</p>
                 <p className="font-bold">{batch.category.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Storage Bay</p>
+                <p className="font-bold text-xs truncate">{batch.storageStatus}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Measurement & Data Integrity</h3>
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-500">1. At Source (Canteen)</p>
+                    <Badge tone="slate">Unverified</Badge>
+                  </div>
+                  <p className="mt-2 text-lg font-bold text-slate-800">
+                    {batch.declaredMassKg ? `${batch.declaredMassKg} kg` : "No weight entered"}
+                  </p>
+                  <p className="text-[11px] text-slate-500">Container marked ready; official weighing deferred to facility</p>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-500">2. At Facility (Community)</p>
+                    <Badge tone={inspection ? "green" : "amber"}>{inspection ? "Measured" : "Pending"}</Badge>
+                  </div>
+                  <p className="mt-2 text-lg font-bold text-slate-800">
+                    {inspection ? formatKg(inspection.verifiedGrossMassKg) : "Pending verification"}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    {inspection
+                      ? `Accepted: ${formatKg(inspection.acceptedMassKg)} (${inspection.contaminationRate}% rejected)`
+                      : "Weighed on physical calibrated scales upon delivery"}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-500">3. Energy Conversion</p>
+                    <Badge tone={batch.conversionBatches.length > 0 ? "green" : "slate"}>
+                      {batch.conversionBatches.length > 0 ? "Verified Gas" : "Estimated"}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-lg font-bold text-slate-800">
+                    {batch.conversionBatches[0]?.cycle.verifiedGasM3
+                      ? formatGas(batch.conversionBatches[0].cycle.verifiedGasM3)
+                      : inspection
+                        ? `${(inspection.acceptedMassKg * batch.category.yieldFactor).toFixed(2)} m³ (Est.)`
+                        : "Pending conversion"}
+                  </p>
+                  <p className="text-[11px] text-slate-500">Actual biogas measured at biodigester flow meter</p>
+                </div>
               </div>
             </div>
           </Card>
           <Card>
-            <h2 className="text-lg font-bold">Inspection</h2>
+            <h2 className="text-lg font-bold">Community Facility Inspection</h2>
             {inspection ? (
               <div className="mt-4 grid gap-4 md:grid-cols-4">
                 <div>
@@ -77,21 +127,21 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Accepted mass</p>
-                  <p className="font-bold">{formatKg(inspection.acceptedMassKg)}</p>
+                  <p className="text-sm text-slate-500">Verified Gross Mass</p>
+                  <p className="font-bold">{formatKg(inspection.verifiedGrossMassKg)} <span className="text-xs text-green-700 font-normal">(Measured)</span></p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Rejected mass</p>
-                  <p className="font-bold">{formatKg(inspection.rejectedMassKg)}</p>
+                  <p className="text-sm text-slate-500">Accepted Organics</p>
+                  <p className="font-bold">{formatKg(inspection.acceptedMassKg)} <span className="text-xs text-slate-500 font-normal">(Calculated)</span></p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-500">Contamination</p>
-                  <p className="font-bold">{inspection.contaminationRate}%</p>
+                  <p className="text-sm text-slate-500">Contamination Rate</p>
+                  <p className="font-bold">{inspection.contaminationRate}% <span className="text-xs text-slate-500 font-normal">({formatKg(inspection.rejectedMassKg)} rejected)</span></p>
                 </div>
                 <p className="md:col-span-4 text-sm leading-6 text-slate-600">{inspection.notes}</p>
               </div>
             ) : (
-              <p className="mt-3 text-sm text-slate-500">No operator inspection yet.</p>
+              <p className="mt-3 text-sm text-slate-500">No community facility inspection yet. Waste batch awaiting delivery and verified weighing.</p>
             )}
           </Card>
           <Card>

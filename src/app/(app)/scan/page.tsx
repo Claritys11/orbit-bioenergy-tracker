@@ -1,14 +1,17 @@
-import { QrScanner } from "@/components/qr-scanner";
+import { ContainerReceiver } from "@/components/container-receiver";
 import { PageHeader } from "@/components/ui";
+import { requireUser } from "@/lib/services/authz";
 
-export default function ScanPage() {
+export default async function ScanPage() {
+  await requireUser("receive_container");
+
   return (
     <div className="grid gap-6">
       <PageHeader
-        title="QR Scanner"
-        description="Scan permitted ORBIT QR labels. Students see only safe traceability information and never gas-equipment instructions."
+        title="Receive Container"
+        description="Receive incoming organic waste containers delivered from schools. Identify container codes to queue batches for verified weighing and inspection."
       />
-      <QrScanner />
+      <ContainerReceiver />
     </div>
   );
 }

@@ -8,7 +8,8 @@ import { formatKg } from "@/lib/utils";
 type ReadyBatch = {
   id: string;
   batchCode: string;
-  grossWeightKg: number;
+  grossWeightKg?: number | null;
+  declaredMassKg?: number | null;
   createdAt: Date | string;
   container?: { containerCode: string } | null;
   category: { name: string };
@@ -23,7 +24,7 @@ export function SchoolPickupRequestForm({ readyBatches }: { readyBatches: ReadyB
   const [isPending, setIsPending] = useState(false);
 
   const selectedBatches = readyBatches.filter((b) => selectedIds.includes(b.id));
-  const totalWeight = selectedBatches.reduce((acc, b) => acc + b.grossWeightKg, 0);
+  const totalWeight = selectedBatches.reduce((acc, b) => acc + (b.grossWeightKg ?? b.declaredMassKg ?? 0), 0);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>

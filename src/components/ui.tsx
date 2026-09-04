@@ -90,18 +90,24 @@ export function Field({
   type = "text",
   required,
   defaultValue,
+  value,
+  onChange,
   step,
   min,
   placeholder,
+  disabled,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
   defaultValue?: string | number;
+  value?: string | number;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
   step?: string;
   min?: string;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-medium text-slate-800">
@@ -111,10 +117,13 @@ export function Field({
         type={type}
         required={required}
         defaultValue={defaultValue}
+        value={value}
+        onChange={onChange}
         step={step}
         min={min}
         placeholder={placeholder}
-        className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm"
+        disabled={disabled}
+        className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm disabled:opacity-50"
       />
     </label>
   );
@@ -125,11 +134,17 @@ export function SelectField({
   name,
   options,
   required,
+  value,
+  onChange,
+  disabled,
 }: {
   label: string;
   name: string;
   options: Array<{ value: string; label: string }>;
   required?: boolean;
+  value?: string | number;
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
+  disabled?: boolean;
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-medium text-slate-800">
@@ -137,7 +152,10 @@ export function SelectField({
       <select
         name={name}
         required={required}
-        className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm"
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm disabled:opacity-50"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

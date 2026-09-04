@@ -75,7 +75,7 @@ export default async function PickupsPage() {
               <div className="grid gap-3">
                 {schoolRequests.map((req) => {
                   const itemCount = req.items.length;
-                  const totalMass = req.items.reduce((acc, i) => acc + i.batch.grossWeightKg, 0);
+                  const totalMass = req.items.reduce((acc, i) => acc + (i.batch.grossWeightKg ?? i.batch.declaredMassKg ?? 0), 0);
 
                   let tone: "green" | "amber" | "red" | "blue" = "blue";
                   if (req.status === "PENDING_OPERATOR_RESPONSE") tone = "amber";

@@ -1,23 +1,30 @@
 import { z } from "zod";
 
 export const batchFormSchema = z.object({
-  sourceId: z.string().uuid(),
-  categoryId: z.string().uuid(),
-  grossWeightKg: z.coerce.number().positive().max(5000),
+  containerId: z.string().uuid().optional().or(z.literal("")),
+  sourceId: z.string().uuid().optional().or(z.literal("")),
+  categoryId: z.string().uuid().optional().or(z.literal("")),
+  grossWeightKg: z.coerce.number().positive().max(5000).optional(),
+  declaredMassKg: z.coerce.number().positive().max(5000).optional(),
   collectionTimestamp: z.string().min(1),
-  storageStatus: z.string().min(3).max(80),
+  storageStatus: z.string().min(3).max(80).default("Container filled and ready"),
   photoUrl: z.string().url().optional().or(z.literal("")),
 });
 
-export const inspectionFormSchema = z.object({
-  batchId: z.string().uuid(),
-  verifiedGrossMassKg: z.coerce.number().positive().max(5000),
-  rejectedMassKg: z.coerce.number().min(0).max(5000),
-  contaminationCategories: z.string().min(1),
-  feedstockCondition: z.string().min(3),
-  conditionFactor: z.coerce.number().min(0).max(1.25),
-  notes: z.string().min(3).max(500),
-});
+export const inspectionFormSchema = z
+  .object({
+    batchId: z.string().uuid(),
+    verifiedGrossMassKg: z.coerce.number().positive("Verified gross mass must be greater than 0 kg.").max(5000),
+    rejectedMassKg: z.coerce.number().min(0, "Rejected mass cannot be negative.").max(5000),
+    contaminationCategories: z.string().min(1),
+    feedstockCondition: z.string().min(3),
+    conditionFactor: z.coerce.number().min(0).max(1.25),
+    notes: z.string().min(3).max(500),
+  })
+  .refine((data) => data.rejectedMassKg <= data.verifiedGrossMassKg, {
+    message: "Rejected contaminant mass cannot exceed verified gross mass.",
+    path: ["rejectedMassKg"],
+  });
 
 export const pickupRequestFormSchema = z.object({
   batchIds: z.array(z.string().uuid()).min(1, "Select at least one waste container/batch for pickup."),
@@ -54,11 +61,12 @@ export const pickupFormSchema = z.object({
 export const conversionFormSchema = z.object({
   facilityId: z.string().uuid(),
   batchIds: z.array(z.string().uuid()).min(1),
-  verifiedGasM3: z.coerce.number().positive(),
-  operationalUseM3: z.coerce.number().min(0),
-  safetyReserveM3: z.coerce.number().min(0),
-  digestateOutputKg: z.coerce.number().min(0),
-  measurementSource: z.enum(["MANUAL", "SENSOR_SIMULATED", "SENSOR_VERIFIED"]),
+  measuredGasM3: z.coerce.number().positive().optional(),
+  verifiedGasM3: z.coerce.number().positive().optional(),
+  operationalUseM3: z.coerce.number().min(0).default(0),
+  safetyReserveM3: z.coerce.number().min(0).default(0),
+  digestateOutputKg: z.coerce.number().min(0).default(0),
+  measurementSource: z.enum(["MANUAL", "SENSOR_SIMULATED", "SENSOR_VERIFIED"]).default("MANUAL"),
   notes: z.string().min(3).max(500),
 });
 

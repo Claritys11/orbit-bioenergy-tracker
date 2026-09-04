@@ -109,7 +109,7 @@ export async function getPublicPartnerNetwork(filterType?: string): Promise<Publ
       return [
         {
           date: b.collectionTimestamp,
-          grossMassKg: b.grossWeightKg,
+          grossMassKg: b.grossWeightKg ?? b.inspection.verifiedGrossMassKg ?? 0,
           acceptedMassKg: b.inspection.acceptedMassKg,
           rejectedMassKg: b.inspection.rejectedMassKg,
           decision: b.inspection.decision,
@@ -430,7 +430,7 @@ export async function getPublicPartnerProfile(slug: string): Promise<PublicPartn
     return [
       {
         date: b.collectionTimestamp,
-        grossMassKg: b.grossWeightKg,
+        grossMassKg: b.inspection.verifiedGrossMassKg ?? b.grossWeightKg ?? 0,
         acceptedMassKg: b.inspection.acceptedMassKg,
         rejectedMassKg: b.inspection.rejectedMassKg,
         decision: b.inspection.decision,
@@ -512,7 +512,7 @@ export async function getPublicPartnerProfile(slug: string): Promise<PublicPartn
   const recentActivity = org.batches.slice(0, 10).map((b) => {
     const inspected = b.inspection;
     let title = `Organic Batch ${b.batchCode}`;
-    let details = `${b.category.name} · ${b.grossWeightKg.toFixed(1)} kg gross`;
+    let details = `${b.category.name} · ${b.grossWeightKg ? `${b.grossWeightKg.toFixed(1)} kg gross` : "Pending verification"}`;
     let badgeTone = "slate";
 
     if (inspected) {
@@ -531,7 +531,7 @@ export async function getPublicPartnerProfile(slug: string): Promise<PublicPartn
       }
     } else {
       title = `Waste Batch Registered`;
-      details = `${b.grossWeightKg.toFixed(1)} kg pending operator verification`;
+      details = b.grossWeightKg ? `${b.grossWeightKg.toFixed(1)} kg pending verification` : "Pending facility verification";
       badgeTone = "blue";
     }
 

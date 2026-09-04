@@ -5,11 +5,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatKg(value: number) {
+export function formatKg(value: number | null | undefined, fallback = "Pending verification") {
+  if (value === null || value === undefined) return fallback;
   return `${value.toLocaleString("en-US", { maximumFractionDigits: 1 })} kg`;
 }
 
-export function formatGas(value: number) {
+export function formatGas(value: number | null | undefined, fallback = "Pending verification") {
+  if (value === null || value === undefined) return fallback;
   return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} m3`;
 }
 

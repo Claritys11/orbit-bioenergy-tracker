@@ -125,29 +125,83 @@ export async function createPartnerAction(_: unknown, formData: FormData) {
 
 export async function createBatchAction(_: unknown, formData: FormData) {
   const user = await requireUser("create_batch");
+  if (!user.organisationId) return { error: "You must belong to an organisation to register waste." };
+
   const parsed = batchFormSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid batch." };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid batch registration data." };
+
+  let containerId: string | undefined = undefined;
+  let sourceId = parsed.data.sourceId || undefined;
+  let categoryId = parsed.data.categoryId || undefined;
+
+  if (parsed.data.containerId) {
+    const container = await prisma.wasteContainer.findUnique({
+      where: { id: parsed.data.containerId },
+    });
+    if (!container) return { error: "Selected container was not found." };
+    if (user.role !== "SUPER_ADMIN" && container.organisationId !== user.organisationId) {
+      return { error: "Container does not belong to your organisation." };
+    }
+    if (!container.isActive || container.status === "REVOKED") {
+      return { error: "This container has been revoked or deactivated." };
+    }
+    containerId = container.id;
+    if (!sourceId) sourceId = container.sourceId;
+    if (!categoryId) categoryId = container.categoryId;
+  }
+
+  // Fallback to organisation's first source and category if not provided
+  if (!sourceId) {
+    const defaultSource = await prisma.wasteSource.findFirst({
+      where: { organisationId: user.organisationId },
+    });
+    if (!defaultSource) return { error: "No waste source found for your organisation." };
+    sourceId = defaultSource.id;
+  }
+
+  if (!categoryId) {
+    const defaultCategory = await prisma.feedstockCategory.findFirst({
+      orderBy: { name: "asc" },
+    });
+    if (!defaultCategory) return { error: "No feedstock category available." };
+    categoryId = defaultCategory.id;
+  }
 
   const code = `ORB-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
-  const batch = await prisma.wasteBatch.create({
-    data: {
-      batchCode: code,
-      qrToken: token(),
-      sourceOrganisationId: user.organisationId!,
-      sourceId: parsed.data.sourceId,
-      categoryId: parsed.data.categoryId,
-      grossWeightKg: parsed.data.grossWeightKg,
-      declaredMassKg: parsed.data.grossWeightKg,
-      collectionTimestamp: new Date(parsed.data.collectionTimestamp),
-      responsibleUserId: user.id,
-      storageStatus: parsed.data.storageStatus,
-      status: "READY_FOR_PICKUP",
-      activityTimeline: [
-        { status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: user.name },
-      ],
-      photos: parsed.data.photoUrl ? { create: { url: parsed.data.photoUrl } } : undefined,
-    },
+
+  const batch = await prisma.$transaction(async (tx) => {
+    const created = await tx.wasteBatch.create({
+      data: {
+        batchCode: code,
+        qrToken: token(),
+        containerId,
+        sourceOrganisationId: user.organisationId!,
+        sourceId: sourceId!,
+        categoryId: categoryId!,
+        grossWeightKg: null, // Unverified at source! Verified only at Community Facility inspection
+        declaredMassKg: parsed.data.declaredMassKg ?? null,
+        collectionTimestamp: new Date(parsed.data.collectionTimestamp),
+        responsibleUserId: user.id,
+        storageStatus: parsed.data.storageStatus || "Container filled and ready",
+        status: "READY_FOR_PICKUP",
+        pickupStatus: "REQUESTED",
+        activityTimeline: [
+          { status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: user.name },
+        ],
+        photos: parsed.data.photoUrl ? { create: { url: parsed.data.photoUrl } } : undefined,
+      },
+    });
+
+    if (containerId) {
+      await tx.wasteContainer.update({
+        where: { id: containerId },
+        data: { status: "READY_FOR_PICKUP" },
+      });
+    }
+
+    return created;
   });
+
   await audit({
     actorId: user.id,
     organisationId: user.organisationId,
@@ -156,7 +210,10 @@ export async function createBatchAction(_: unknown, formData: FormData) {
     entityId: batch.id,
     after: batch,
   });
+
   revalidatePath("/batches");
+  revalidatePath("/canteen/dashboard");
+  revalidatePath("/school/dashboard");
   redirect(`/batches/${batch.id}`);
 }
 
@@ -500,9 +557,19 @@ export async function inspectBatchAction(_: unknown, formData: FormData) {
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid inspection." };
 
   const [before, config] = await Promise.all([
-    prisma.wasteBatch.findUniqueOrThrow({ where: { id: parsed.data.batchId } }),
+    prisma.wasteBatch.findUniqueOrThrow({
+      where: { id: parsed.data.batchId },
+      include: { sourceOrganisation: true },
+    }),
     prisma.allocationConfiguration.findFirstOrThrow({ where: { active: true } }),
   ]);
+
+  if (before.status !== "DELIVERED" && before.status !== "UNDER_INSPECTION") {
+    return {
+      error: `Batch ${before.batchCode} must be delivered to the Community Facility before inspection (current status: ${before.status}).`,
+    };
+  }
+
   assertBatchTransition(before.status, "UNDER_INSPECTION");
   const result = calculateContamination({
     verifiedGrossMassKg: parsed.data.verifiedGrossMassKg,
@@ -516,6 +583,7 @@ export async function inspectBatchAction(_: unknown, formData: FormData) {
       where: { id: parsed.data.batchId },
       data: {
         status: result.decision,
+        grossWeightKg: parsed.data.verifiedGrossMassKg, // Officially measured at Community Facility
         verifiedGrossMassKg: parsed.data.verifiedGrossMassKg,
         rejectedMassKg: parsed.data.rejectedMassKg,
         acceptedMassKg: result.acceptedMassKg,
@@ -529,7 +597,7 @@ export async function inspectBatchAction(_: unknown, formData: FormData) {
     if (before.containerId) {
       await tx.wasteContainer.update({
         where: { id: before.containerId },
-        data: { status: "AVAILABLE" },
+        data: { status: "EMPTIED" },
       });
     }
     await tx.contaminationInspection.upsert({
@@ -573,10 +641,89 @@ export async function inspectBatchAction(_: unknown, formData: FormData) {
   });
   revalidatePath(`/batches/${parsed.data.batchId}`);
   revalidatePath("/operations/inspections");
+  return { success: true };
 }
 
 export async function inspectBatchFormAction(formData: FormData) {
   await inspectBatchAction(null, formData);
+}
+
+export async function receiveContainerAction(tokenOrCode: string) {
+  const user = await requireUser("receive_container");
+  const trimmed = tokenOrCode.trim();
+
+  const container = await prisma.wasteContainer.findFirst({
+    where: {
+      OR: [
+        { qrToken: trimmed },
+        { containerCode: trimmed },
+        { id: trimmed },
+      ],
+    },
+    include: {
+      organisation: true,
+      batches: {
+        where: {
+          status: {
+            in: [
+              "READY_FOR_PICKUP",
+              "PICKUP_REQUESTED",
+              "PICKUP_SCHEDULED",
+              "IN_TRANSIT",
+              "DELIVERED",
+            ],
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
+    },
+  });
+
+  if (!container) {
+    return { error: `Container with code/token "${trimmed}" was not found.` };
+  }
+
+  const activeBatch = container.batches[0];
+  if (!activeBatch) {
+    return {
+      success: true,
+      containerCode: container.containerCode,
+      message: `Container ${container.containerCode} identified, but has no active batch in progress.`,
+      batchId: null,
+    };
+  }
+
+  if (activeBatch.status !== "DELIVERED") {
+    await prisma.$transaction(async (tx) => {
+      await tx.wasteBatch.update({
+        where: { id: activeBatch.id },
+        data: {
+          status: "DELIVERED",
+          pickupStatus: "DELIVERED",
+          activityTimeline: [
+            ...(Array.isArray(activeBatch.activityTimeline) ? activeBatch.activityTimeline : []),
+            { status: "DELIVERED", at: new Date().toISOString(), actor: user.name, note: "Received at Community Facility" },
+          ],
+        },
+      });
+      await tx.wasteContainer.update({
+        where: { id: container.id },
+        data: { status: "AT_FACILITY" },
+      });
+    });
+  }
+
+  revalidatePath("/operations/inspections");
+  revalidatePath("/scan");
+  return {
+    success: true,
+    containerCode: container.containerCode,
+    batchId: activeBatch.id,
+    batchCode: activeBatch.batchCode,
+    organisationName: container.organisation.name,
+    status: "DELIVERED",
+  };
 }
 
 export async function createConversionAction(_: unknown, formData: FormData) {
@@ -587,13 +734,43 @@ export async function createConversionAction(_: unknown, formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid cycle." };
 
+  const facility = await prisma.partnerFacility.findUniqueOrThrow({
+    where: { id: parsed.data.facilityId },
+    include: { organisation: true },
+  });
+
+  if (user.role !== "SUPER_ADMIN" && user.organisationId !== facility.organisationId) {
+    return { error: "You are not authorised to record conversion cycles for this facility." };
+  }
+
   const batches = await prisma.wasteBatch.findMany({
     where: { id: { in: parsed.data.batchIds } },
     include: { category: true, inspection: true },
   });
-  const allocatableGasM3 =
-    parsed.data.verifiedGasM3 - parsed.data.operationalUseM3 - parsed.data.safetyReserveM3;
-  if (allocatableGasM3 < 0) return { error: "Operational use and reserve exceed verified gas." };
+
+  if (batches.length === 0) {
+    return { error: "Please select at least one accepted batch." };
+  }
+
+  const invalidBatches = batches.filter(
+    (b) => !b.inspection || (b.status !== "ACCEPTED" && b.status !== "CONDITIONAL"),
+  );
+  if (invalidBatches.length > 0) {
+    return {
+      error: `Cannot convert unaccepted batches: ${invalidBatches.map((b) => b.batchCode).join(", ")}. Only ACCEPTED or CONDITIONAL batches can enter conversion.`,
+    };
+  }
+
+  const measuredGasM3 = parsed.data.measuredGasM3 ?? parsed.data.verifiedGasM3 ?? 0;
+  const operationalUseM3 = parsed.data.operationalUseM3 ?? 0;
+  const safetyReserveM3 = parsed.data.safetyReserveM3 ?? 0;
+  const allocatableGasM3 = measuredGasM3 - operationalUseM3 - safetyReserveM3;
+
+  if (allocatableGasM3 < 0) return { error: "Operational use and reserve exceed verified gas output." };
+
+  const config = await prisma.allocationConfiguration.findFirstOrThrow({
+    where: { active: true },
+  });
 
   const cycle = await prisma.$transaction(async (tx) => {
     const created = await tx.conversionCycle.create({
@@ -601,32 +778,33 @@ export async function createConversionAction(_: unknown, formData: FormData) {
         facilityId: parsed.data.facilityId,
         cycleCode: `CYC-${Date.now()}`,
         processingDate: new Date(),
-        verifiedGasM3: parsed.data.verifiedGasM3,
-        operationalUseM3: parsed.data.operationalUseM3,
-        safetyReserveM3: parsed.data.safetyReserveM3,
+        verifiedGasM3: measuredGasM3, // Verified physical measured output
+        operationalUseM3,
+        safetyReserveM3,
         allocatableGasM3,
         digestateOutputKg: parsed.data.digestateOutputKg,
         measurementSource: parsed.data.measurementSource,
         notes: parsed.data.notes,
         measurements: {
           create: {
-            volumeM3: parsed.data.verifiedGasM3,
+            volumeM3: measuredGasM3,
             source: parsed.data.measurementSource,
             measuredAt: new Date(),
-            notes: "Verified gas measurement. Estimated gas remains separate.",
+            notes: "Verified physical gas measurement. Estimated gas remains separate.",
           },
         },
         digestate: {
           create: {
             outputKg: parsed.data.digestateOutputKg,
             distributedKg: parsed.data.digestateOutputKg * 0.55,
-            recipient: "Demo community gardens",
+            recipient: "Community agriculture and soil restoration",
             valueEstimate: parsed.data.digestateOutputKg * 350,
           },
         },
       },
     });
 
+    const contributions = [];
     for (const batch of batches) {
       const acceptedMassKg = batch.inspection?.acceptedMassKg ?? 0;
       await tx.conversionBatch.create({
@@ -636,7 +814,7 @@ export async function createConversionAction(_: unknown, formData: FormData) {
         batchId: batch.id,
         organisationId: batch.sourceOrganisationId,
         pool:
-          batch.sourceOrganisationId === user.organisationId
+          batch.sourceOrganisationId === facility.organisationId
             ? "operator"
             : ("schools" as AllocationPool),
         acceptedMassKg,
@@ -644,10 +822,12 @@ export async function createConversionAction(_: unknown, formData: FormData) {
         qualityFactor:
           batch.inspection?.decision === "REJECTED"
             ? 0
-            : Math.max(0, 1 - (batch.inspection?.contaminationRate ?? 0) / 30),
+            : Math.max(0, 1 - (batch.inspection?.contaminationRate ?? 0) / config.contaminationReject),
         conditionFactor: batch.inspection?.conditionFactor ?? batch.category.conditionFactor,
         rejected: batch.inspection?.decision === "REJECTED",
       });
+      contributions.push(contribution);
+
       await tx.contributionScore.create({
         data: {
           cycleId: created.id,
@@ -673,6 +853,37 @@ export async function createConversionAction(_: unknown, formData: FormData) {
         });
       }
     }
+
+    // AUTOMATIC ALLOCATION ENGINE: create finalised allocations automatically
+    const allocationResult = calculateAllocations({
+      verifiedGasM3: created.verifiedGasM3,
+      operationalUseM3: created.operationalUseM3,
+      safetyReserveM3: created.safetyReserveM3,
+      config: {
+        schoolPercent: config.schoolPercent,
+        operatorPercent: config.operatorPercent,
+        contributorPercent: config.contributorPercent,
+      },
+      contributions,
+    });
+
+    for (const item of allocationResult.allocations) {
+      await tx.energyAllocation.create({
+        data: {
+          cycleId: created.id,
+          configurationId: config.id,
+          recipientOrgId: item.organisationId,
+          pool: item.pool,
+          version: 1,
+          status: "FINALISED",
+          allocatedGasM3: item.allocatedGasM3,
+          scoreBasis: item.scoreBasis,
+          finalisedAt: new Date(),
+          notes: `Automatic allocation based on active config v${config.version} (50/30/20 rule).`,
+        },
+      });
+    }
+
     return created;
   });
 

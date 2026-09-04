@@ -11,6 +11,7 @@ export type Permission =
   | "request_pickup"
   | "respond_pickup_request"
   | "manage_pickup_logistics"
+  | "receive_container"
   | "inspect_batch"
   | "record_conversion"
   | "calculate_allocation"
@@ -32,6 +33,7 @@ const rolePermissions: Record<Role, Permission[]> = {
     "request_pickup",
     "respond_pickup_request",
     "manage_pickup_logistics",
+    "receive_container",
     "inspect_batch",
     "record_conversion",
     "calculate_allocation",
@@ -60,16 +62,17 @@ const rolePermissions: Record<Role, Permission[]> = {
   OPERATOR: [
     "respond_pickup_request",
     "manage_pickup_logistics",
-    "inspect_batch",
-    "record_conversion",
-    "calculate_allocation",
-    "fulfil_allocation",
-    "manage_safety",
     "view_reports",
     "view_batches",
   ],
   COMMUNITY_PARTNER: [
+    "receive_container",
+    "inspect_batch",
+    "record_conversion",
+    "fulfil_allocation",
+    "manage_safety",
     "view_reports",
+    "view_batches",
   ],
 };
 

@@ -298,7 +298,7 @@ model WasteBatch {
   sourceOrganisationId  String
   sourceId              String
   categoryId            String
-  grossWeightKg         Float
+  grossWeightKg         Float?
   declaredMassKg        Float?
   collectedMassKg       Float?
   verifiedGrossMassKg   Float?

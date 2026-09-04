@@ -29,19 +29,19 @@ const roleCopy = {
   ],
   CANTEEN_STAFF: [
     "Canteen Staff Dashboard",
-    "Scan assigned reusable QR containers, enter declared weight & category, and register today's organic waste loads.",
+    "Select assigned reusable containers and mark organic waste loads as ready for school pickup.",
   ],
   STUDENT: [
     "Student Dashboard",
     "Waste journey, sorting accuracy, contamination reduction, class learning, and school impact without gas-equipment instructions.",
   ],
   OPERATOR: [
-    "Bioenergy Operator Dashboard",
-    "Manage incoming school pickup requests, vehicle fleet routing, facility contamination inspections, conversion cycles, and gas fulfilment.",
+    "Logistics & Collection Operator Dashboard",
+    "Manage incoming school pickup requests, schedule vehicle collection routes, track waste in transit, and confirm delivery to community facilities.",
   ],
   COMMUNITY_PARTNER: [
-    "Community Partner Showcase",
-    "Monitor community energy benefits, local allocation fulfilment, facility throughput performance, and public sustainability impact.",
+    "Community Facility Dashboard",
+    "Receive delivered waste containers, perform verified weighing and contamination inspection, record conversion cycles with measured biogas, and manage clean energy fulfilment.",
   ],
 } as const;
 
@@ -59,25 +59,24 @@ const nextActions: Record<Role, Array<{ label: string; href: string; permission?
     { label: "Open sustainability report", href: "/reports/sustainability", permission: "view_reports" },
   ],
   CANTEEN_STAFF: [
-    { label: "Register Organic Load", href: "/batches/new", permission: "create_waste_record" },
-    { label: "Scan QR Container", href: "/scan" },
-    { label: "Review batches", href: "/batches" },
+    { label: "Register Waste", href: "/batches/new", permission: "create_waste_record" },
+    { label: "Review Waste Records", href: "/batches", permission: "view_batches" },
   ],
   STUDENT: [
-    { label: "Open QR Scanner", href: "/scan", permission: "view_student" },
+    { label: "Open Trace Explorer", href: "/trace", permission: "view_student" },
     { label: "View public impact", href: "/impact" },
   ],
   OPERATOR: [
     { label: "Incoming pickup requests", href: "/operations/pickups", permission: "respond_pickup_request" },
-    { label: "Facility quality inspection", href: "/operations/inspections", permission: "inspect_batch" },
-    { label: "Record conversion cycle & gas", href: "/operations/conversions", permission: "record_conversion" },
-    { label: "Calculate energy allocation", href: "/operations/allocations", permission: "calculate_allocation" },
-    { label: "Fulfil energy allocation", href: "/operations/fulfilment", permission: "fulfil_allocation" },
+    { label: "Active pickups & routes", href: "/operations/pickups", permission: "manage_pickup_logistics" },
+    { label: "Logistics impact report", href: "/reports/impact", permission: "view_reports" },
   ],
   COMMUNITY_PARTNER: [
-    { label: "View community allocations", href: "/operations/allocations", permission: "view_reports" },
-    { label: "View fulfilment status", href: "/operations/fulfilment", permission: "view_reports" },
-    { label: "Open impact report", href: "/reports/impact", permission: "view_reports" },
+    { label: "Receive container load", href: "/scan", permission: "receive_container" },
+    { label: "Weigh & inspect waste", href: "/operations/inspections", permission: "inspect_batch" },
+    { label: "Record conversion cycle", href: "/operations/conversions", permission: "record_conversion" },
+    { label: "Fulfil energy allocation", href: "/operations/fulfilment", permission: "fulfil_allocation" },
+    { label: "Facility impact report", href: "/reports/impact", permission: "view_reports" },
   ],
 };
 
@@ -89,7 +88,20 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
     user.role === "SUPER_ADMIN" || user.role === "OPERATOR" || user.role === "COMMUNITY_PARTNER"
       ? {}
       : { sourceOrganisationId: user.organisationId };
-  const [batches, inspections, cycles, allocations, alerts, auditLogs, orgs, pendingRequests] = await Promise.all([
+  const [
+    batches,
+    inspections,
+    cycles,
+    allocations,
+    alerts,
+    auditLogs,
+    orgs,
+    pendingRequests,
+    activePickupsCount,
+    deliveredPickupsCount,
+    awaitingInspectionCount,
+    userContainersCount,
+  ] = await Promise.all([
     prisma.wasteBatch.findMany({
       where: batchWhere,
       include: { category: true, inspection: true, sourceOrganisation: true },
@@ -112,6 +124,18 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
       where: { status: "PENDING_OPERATOR_RESPONSE" },
       include: { items: true },
     }),
+    prisma.pickupRequest.count({
+      where: { status: { in: ["SCHEDULED", "IN_TRANSIT"] } },
+    }),
+    prisma.pickupRequest.count({
+      where: { status: "DELIVERED" },
+    }),
+    prisma.wasteBatch.count({
+      where: { status: "DELIVERED" },
+    }),
+    prisma.wasteContainer.count({
+      where: user.organisationId ? { organisationId: user.organisationId } : {},
+    }),
   ]);
 
   const acceptedMass = inspections.reduce((sum, item) => sum + item.acceptedMassKg, 0);
@@ -123,7 +147,6 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
   );
   const [title, description] = roleCopy[user.role];
   const waitingPickup = batches.filter((batch) => batch.status === "READY_FOR_PICKUP").length;
-  const rejected = inspections.filter((inspection) => inspection.decision === "REJECTED").length;
   const actions = nextActions[user.role].filter((action) => !action.permission || can(user.role, action.permission));
 
   const userOrg = orgs.find((o) => o.id === user.organisationId);
@@ -135,9 +158,11 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
         description={description}
         action={
           user.role === "CANTEEN_STAFF" ? (
-            <LinkButton href="/batches/new">Register Load</LinkButton>
+            <LinkButton href="/batches/new">Register Waste</LinkButton>
           ) : user.role === "SCHOOL_ADMIN" ? (
             <LinkButton href="/operations/pickups">Request Pickup</LinkButton>
+          ) : user.role === "COMMUNITY_PARTNER" ? (
+            <LinkButton href="/operations/inspections">Weigh & Inspect</LinkButton>
           ) : (
             <LinkButton href="/transparency" variant="secondary">
               Public transparency
@@ -167,7 +192,7 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
         </div>
       ) : null}
       <div className="grid gap-4 md:grid-cols-4">
-        <Metric label="Accepted organic waste" value={formatKg(acceptedMass)} hint="Operator-inspected accepted mass." />
+        <Metric label="Accepted organic waste" value={formatKg(acceptedMass)} hint="Community-verified accepted mass." />
         <Metric label="Verified biogas" value={formatGas(verifiedGas)} hint="Measured cycle records, not estimates." />
         <Metric label="Allocated biogas" value={formatGas(allocation)} hint="Finalised allocation versions." />
         <Metric label="Fulfilled biogas" value={formatGas(fulfilled)} hint="Delivered energy output." />
@@ -177,23 +202,25 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <QrCode className="text-[var(--orbit-primary)]" />
-            <h2 className="mt-3 font-bold">Register Container Load</h2>
-            <p className="mt-2 text-sm text-slate-600">Scan assigned reusable container QR tags to enter today&apos;s organic waste weight.</p>
+            <h2 className="mt-3 font-bold">Register Waste Container</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Select your assigned reusable container to mark today&apos;s load ready for school collection. No weight entry required.
+            </p>
             <LinkButton href="/batches/new" className="mt-4">
-              Register Load
+              Register Waste
             </LinkButton>
           </Card>
           <Card>
             <Truck className="text-[var(--orbit-secondary)]" />
             <h2 className="mt-3 font-bold">Ready containers</h2>
             <p className="mt-2 text-2xl font-bold">{waitingPickup}</p>
-            <p className="text-sm text-slate-600">Containers prepared in canteen storage bay.</p>
+            <p className="text-sm text-slate-600">Containers marked ready in canteen bay awaiting school pickup request.</p>
           </Card>
           <Card>
-            <ClipboardCheck className="text-red-700" />
-            <h2 className="mt-3 font-bold">Inspection feedback</h2>
-            <p className="mt-2 text-2xl font-bold">{rejected}</p>
-            <p className="text-sm text-slate-600">Sorting contamination feedback from facility operators.</p>
+            <ClipboardCheck className="text-[var(--orbit-primary)]" />
+            <h2 className="mt-3 font-bold">Assigned containers</h2>
+            <p className="mt-2 text-2xl font-bold">{userContainersCount}</p>
+            <p className="text-sm text-slate-600">Reusable QR-tagged containers assigned to your organisation.</p>
           </Card>
         </div>
       ) : null}
@@ -204,22 +231,54 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
             <Truck className="text-amber-600" />
             <h2 className="mt-3 font-bold">Pending Pickup Requests</h2>
             <p className="mt-2 text-3xl font-extrabold text-amber-600">{pendingRequests.length}</p>
-            <p className="text-sm text-slate-600">Collection requests awaiting operator review.</p>
+            <p className="text-sm text-slate-600">Collection requests awaiting logistics review.</p>
             <LinkButton href="/operations/pickups" className="mt-4" variant="secondary">
               Review Requests
             </LinkButton>
           </Card>
           <Card>
-            <Factory className="text-[var(--orbit-primary)]" />
-            <h2 className="mt-3 font-bold">Verified Biogas Cycles</h2>
-            <p className="mt-2 text-3xl font-extrabold text-black">{cycles.length}</p>
-            <p className="text-sm text-slate-600">Completed conversion batches at facility.</p>
+            <Truck className="text-[var(--orbit-secondary)]" />
+            <h2 className="mt-3 font-bold">Active Pickups & In Transit</h2>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900">{activePickupsCount}</p>
+            <p className="text-sm text-slate-600">Scheduled pickups and vehicles on route to facilities.</p>
+            <LinkButton href="/operations/pickups" className="mt-4" variant="secondary">
+              Manage Logistics
+            </LinkButton>
           </Card>
           <Card>
-            <ShieldAlert className="text-slate-700" />
-            <h2 className="mt-3 font-bold">Biodigester Safety</h2>
-            <p className="mt-2 text-3xl font-extrabold text-black">{alerts.length}</p>
-            <p className="text-sm text-slate-600">Active facility pressure & safety alerts.</p>
+            <ClipboardCheck className="text-green-700" />
+            <h2 className="mt-3 font-bold">Completed Deliveries</h2>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900">{deliveredPickupsCount}</p>
+            <p className="text-sm text-slate-600">Loads delivered safely to community processing facilities.</p>
+          </Card>
+        </div>
+      ) : null}
+
+      {user.role === "COMMUNITY_PARTNER" ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-l-4 border-l-emerald-500">
+            <ClipboardCheck className="text-emerald-600" />
+            <h2 className="mt-3 font-bold">Awaiting Inspection</h2>
+            <p className="mt-2 text-3xl font-extrabold text-emerald-600">{awaitingInspectionCount}</p>
+            <p className="text-sm text-slate-600">Delivered containers awaiting calibrated weighing and sorting.</p>
+            <LinkButton href="/operations/inspections" className="mt-4" variant="secondary">
+              Inspect Delivered Batches
+            </LinkButton>
+          </Card>
+          <Card>
+            <Factory className="text-[var(--orbit-primary)]" />
+            <h2 className="mt-3 font-bold">Conversion Cycles</h2>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900">{cycles.length}</p>
+            <p className="text-sm text-slate-600">Biodigester batches with verified physical gas meter output.</p>
+            <LinkButton href="/operations/conversions" className="mt-4" variant="secondary">
+              Record Conversion Cycle
+            </LinkButton>
+          </Card>
+          <Card>
+            <Zap className="text-[var(--orbit-energy)]" />
+            <h2 className="mt-3 font-bold">Verified Biogas Output</h2>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900">{formatGas(verifiedGas)}</p>
+            <p className="text-sm text-slate-600">Total verified physical clean gas produced by facility.</p>
           </Card>
         </div>
       ) : null}
@@ -230,8 +289,8 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
             <BookOpen className="text-[var(--orbit-primary)]" />
             <h2 className="mt-3 font-bold">Follow the waste journey</h2>
             <p className="mt-2 text-sm text-slate-600">Scan permitted QR labels and learn how contamination changes outcomes.</p>
-            <LinkButton href="/scan" className="mt-4">
-              Open QR Scanner
+            <LinkButton href="/impact" className="mt-4">
+              Explore Impact
             </LinkButton>
           </Card>
           <Card>

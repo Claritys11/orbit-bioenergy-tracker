@@ -49,17 +49,17 @@ const groups: Array<{
       { href: "/admin/containers", label: "QR Containers", icon: QrCode, permission: "manage_containers" },
       { href: "/batches", label: "Waste Batches", icon: QrCode, permission: "view_batches" },
       { href: "/batches/new", label: "Register Organic Load", icon: Recycle, permission: "create_waste_record" },
-      { href: "/scan", label: "QR Scanner", icon: ScanLine, permission: ["create_waste_record", "inspect_batch"] },
+      { href: "/scan", label: "Receive Container", icon: ScanLine, permission: "receive_container" },
       { href: "/operations/pickups", label: "Pickups", icon: CalendarCheck, permission: ["request_pickup", "respond_pickup_request", "manage_pickup_logistics"] },
       { href: "/operations/inspections", label: "Inspections", icon: ClipboardCheck, permission: "inspect_batch" },
     ],
   },
   {
-    label: "Energy Operations",
+    label: "Bioenergy Operations",
     items: [
       { href: "/operations/conversions", label: "Conversion Cycles", icon: Factory, permission: "record_conversion" },
-      { href: "/operations/allocations", label: "Allocations", icon: Zap, permission: ["calculate_allocation", "manage_org"] },
-      { href: "/operations/fulfilment", label: "Fulfilment", icon: Gauge, permission: ["fulfil_allocation", "manage_org"] },
+      { href: "/operations/allocations", label: "Allocations", icon: Zap, permission: "manage_system" },
+      { href: "/operations/fulfilment", label: "Energy Fulfilment", icon: Gauge, permission: "fulfil_allocation" },
     ],
   },
   {

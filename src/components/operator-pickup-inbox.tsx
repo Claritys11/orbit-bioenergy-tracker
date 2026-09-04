@@ -26,7 +26,8 @@ type PickupRequestData = {
     batch: {
       id: string;
       batchCode: string;
-      grossWeightKg: number;
+      grossWeightKg?: number | null;
+      declaredMassKg?: number | null;
       category: { name: string };
       container?: { containerCode: string } | null;
     };
@@ -130,7 +131,7 @@ export function OperatorPickupInbox({
           <div className="mt-4 grid gap-4">
             {pendingRequests.map((req) => {
               const itemCount = req.items.length;
-              const totalMass = req.items.reduce((acc, i) => acc + i.batch.grossWeightKg, 0);
+              const totalMass = req.items.reduce((acc, i) => acc + (i.batch.grossWeightKg ?? i.batch.declaredMassKg ?? 0), 0);
               const urgency = getUrgencyIndicator(itemCount);
               const isRejecting = rejectingId === req.id;
 
@@ -152,7 +153,7 @@ export function OperatorPickupInbox({
                     </div>
 
                     <div className="text-right">
-                      <p className="text-xl font-extrabold text-[var(--orbit-primary)]">{formatKg(totalMass)}</p>
+                      <p className="text-xl font-extrabold text-[var(--orbit-primary)]">{totalMass > 0 ? formatKg(totalMass) : "Pending weighing"}</p>
                       <p className="text-xs font-semibold text-slate-600">{itemCount} container load(s)</p>
                     </div>
                   </div>
@@ -180,7 +181,7 @@ export function OperatorPickupInbox({
                           {item.batch.container ? (
                             <span className="text-slate-500">({item.batch.container.containerCode})</span>
                           ) : null}
-                          <span>&bull; {formatKg(item.batch.grossWeightKg)}</span>
+                          <span>&bull; {formatKg(item.batch.grossWeightKg ?? item.batch.declaredMassKg)}</span>
                         </span>
                       ))}
                     </div>

@@ -30,7 +30,7 @@ export default async function BatchesPage() {
         description="Trace every organic-waste batch from source registration through pickup, inspection, conversion, allocation, and closure."
         action={
           canCreateWasteRecord ? (
-            <LinkButton href="/batches/new">Register Organic Load</LinkButton>
+            <LinkButton href="/batches/new">Register Waste</LinkButton>
           ) : undefined
         }
       />

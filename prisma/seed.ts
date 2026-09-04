@@ -114,26 +114,33 @@ async function main() {
 
   const operatorOrg = await prisma.organisation.create({
     data: {
-      name: "KSM Energi Sirkular Bandung",
-      slug: "ksm-energi-sirkular",
+      name: "Bandung Circular Logistics Transporter",
+      slug: "bandung-logistics",
       type: "OPERATOR",
-      address: "TPS3R Pilot Hub, Bandung",
+      address: "Logistics Fleet Depo, Bandung",
+      sources: { create: { name: "Logistics staging area", sourceType: "Operator" } },
+    },
+    include: { sources: true },
+  });
+
+  const community = await prisma.organisation.create({
+    data: {
+      name: "RW 04 Bioenergy Facility & TPS3R Hub",
+      slug: "rw04-community",
+      type: "COMMUNITY_PARTNER",
+      address: "TPS3R Pilot Hub, RW 04 Bandung",
       facility: {
         create: {
-          facilityType: "TPS3R / KSM pilot facility",
+          facilityType: "TPS3R / Community Biodigester",
           capacityKgPerDay: 850,
           biodigesterStatus: "PILOT_PARTNER",
           energyMode: "LOW_PRESSURE_GAS_BAG",
           supportedFeedstock: ["Cooked rice", "Vegetable prep", "Fruit peel", "Market produce"],
         },
       },
-      sources: { create: { name: "Operator pre-processing residue", sourceType: "Operator" } },
+      sources: { create: { name: "Facility pre-processing residue", sourceType: "Community Facility" } },
     },
     include: { facility: true, sources: true },
-  });
-
-  const community = await prisma.organisation.create({
-    data: { name: "RW 04 Community Kitchen", slug: "rw04-community", type: "COMMUNITY_PARTNER" },
   });
 
   const market = await prisma.organisation.create({
@@ -208,7 +215,7 @@ async function main() {
 
   await prisma.vehicle.create({
     data: {
-      facilityId: operatorOrg.facility!.id,
+      facilityId: community.facility!.id,
       plate: "D 2046 ORB",
       label: "Covered organics pickup cart",
       capacityKg: 350,
@@ -430,16 +437,16 @@ async function main() {
         pickupRequestItem: { create: { pickupRequestId: req.id } },
         inspection: {
           create: {
-            inspectorId: operator.id,
+            inspectorId: partner.id,
             verifiedGrossMassKg: item.gross,
             rejectedMassKg: item.rejected,
             contaminationRate: result.contaminationRate,
             acceptedMassKg: result.acceptedMassKg,
             contaminationCategories: ["minor packaging"],
-            feedstockCondition: "Demo inspection: source-separated and weighed at operator hub",
+            feedstockCondition: "Demo inspection: source-separated and weighed at community facility",
             conditionFactor: item.conditionFactor,
             decision: result.decision,
-            notes: `${result.decision} demo inspection.`,
+            notes: `${result.decision} community inspection.`,
             photoUrls: [],
           },
         },
@@ -451,7 +458,7 @@ async function main() {
 
   const cycle = await prisma.conversionCycle.create({
     data: {
-      facilityId: operatorOrg.facility!.id,
+      facilityId: community.facility!.id,
       cycleCode: "CYC-2026-08-DEMO",
       processingDate: new Date("2026-08-21T03:00:00.000Z"),
       verifiedGasM3: 14.8,
@@ -460,7 +467,7 @@ async function main() {
       allocatableGasM3: 12.6,
       digestateOutputKg: 46,
       measurementSource: "MANUAL",
-      notes: "Verified gas from operator meter log. Estimated gas kept separate.",
+      notes: "Verified gas from community facility meter log. Estimated gas kept separate.",
       measurements: {
         create: {
           volumeM3: 14.8,
@@ -551,6 +558,157 @@ async function main() {
       },
     });
   }
+
+  // Explicit Lifecycle Demonstration Batches (Requirement 26)
+  // Batch A: Registered by Canteen, Ready for pickup, Weight: Pending verification (no grossWeightKg)
+  await prisma.wasteBatch.create({
+    data: {
+      batchCode: "ORB-DEMO-A-READY",
+      qrToken: "ORB-DEMO-TOKEN-A",
+      containerId: containerSchoolA.id,
+      sourceOrganisationId: schoolA.id,
+      sourceId: schoolA.sources[0].id,
+      categoryId: categories[1].id,
+      grossWeightKg: null, // Pending facility verification!
+      declaredMassKg: null,
+      collectionTimestamp: new Date(),
+      responsibleUserId: canteenStaff.id,
+      storageStatus: "Covered bin; container marked ready. Official weight pending facility verification.",
+      pickupStatus: "REQUESTED",
+      status: "READY_FOR_PICKUP",
+      activityTimeline: [
+        { status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: canteenStaff.name, note: "Container marked ready. Weight pending facility verification." },
+      ],
+    },
+  });
+
+  // Batch B: Delivered to Community Facility, Verified gross: 20 kg, Rejected: 3 kg, Accepted: 17 kg
+  const batchBReq = await prisma.pickupRequest.create({
+    data: {
+      requestCode: "REQ-DEMO-B-DELIVERED",
+      schoolOrganisationId: schoolA.id,
+      requestedByUserId: schoolAdmin.id,
+      proposedPickupStart: new Date(Date.now() - 3600 * 2000),
+      proposedPickupEnd: new Date(Date.now() - 3600 * 1000),
+      status: "DELIVERED",
+      acceptedAt: new Date(Date.now() - 3600 * 1800),
+      actualScheduledAt: new Date(Date.now() - 3600 * 1500),
+    },
+  });
+
+  await prisma.wasteBatch.create({
+    data: {
+      batchCode: "ORB-DEMO-B-DELIVERED",
+      qrToken: "ORB-DEMO-TOKEN-B",
+      containerId: containerSchoolA.id,
+      sourceOrganisationId: schoolA.id,
+      sourceId: schoolA.sources[0].id,
+      categoryId: categories[0].id,
+      grossWeightKg: 20.0,
+      declaredMassKg: null,
+      verifiedGrossMassKg: 20.0,
+      rejectedMassKg: 3.0,
+      acceptedMassKg: 17.0,
+      collectionTimestamp: new Date(Date.now() - 3600 * 3000),
+      responsibleUserId: canteenStaff.id,
+      storageStatus: "Arrived at TPS3R community facility",
+      pickupStatus: "DELIVERED",
+      status: "DELIVERED",
+      activityTimeline: [
+        { status: "READY_FOR_PICKUP", at: new Date(Date.now() - 3600 * 3000).toISOString(), actor: canteenStaff.name },
+        { status: "DELIVERED", at: new Date(Date.now() - 3600 * 1000).toISOString(), actor: operator.name },
+        { status: "ACCEPTED", at: new Date().toISOString(), actor: partner.name, note: "Verified weighing: 20.0kg gross, 3.0kg rejected -> 17.0kg accepted organics." },
+      ],
+      pickupRequestItem: { create: { pickupRequestId: batchBReq.id } },
+      inspection: {
+        create: {
+          inspectorId: partner.id,
+          verifiedGrossMassKg: 20.0,
+          rejectedMassKg: 3.0,
+          contaminationRate: 15.0,
+          acceptedMassKg: 17.0,
+          contaminationCategories: ["Plastic packaging", "Serviettes"],
+          feedstockCondition: "Good separation, packaging sorted out at facility.",
+          conditionFactor: 0.95,
+          decision: "CONDITIONAL",
+          notes: "Measured 20.0 kg gross, 3.0 kg rejected contamination removed.",
+          photoUrls: [],
+        },
+      },
+    },
+  });
+
+  // Batch C: Processed in Conversion Cycle: Accepted 25 kg, Estimated gas: 3.4 m³, Verified gas: 3.0 m³
+  const batchC = await prisma.wasteBatch.create({
+    data: {
+      batchCode: "ORB-DEMO-C-PROCESSED",
+      qrToken: "ORB-DEMO-TOKEN-C",
+      containerId: containerSchoolB.id,
+      sourceOrganisationId: schoolB.id,
+      sourceId: schoolB.sources[0].id,
+      categoryId: categories[1].id,
+      grossWeightKg: 26.5,
+      declaredMassKg: null,
+      verifiedGrossMassKg: 26.5,
+      rejectedMassKg: 1.5,
+      acceptedMassKg: 25.0,
+      collectionTimestamp: new Date(Date.now() - 86400 * 2000),
+      responsibleUserId: schoolAdmin.id,
+      storageStatus: "Processed in community digester",
+      pickupStatus: "DELIVERED",
+      status: "PROCESSED",
+      activityTimeline: [
+        { status: "READY_FOR_PICKUP", at: new Date(Date.now() - 86400 * 2000).toISOString(), actor: schoolAdmin.name },
+        { status: "DELIVERED", at: new Date(Date.now() - 86400 * 1500).toISOString(), actor: operator.name },
+        { status: "ACCEPTED", at: new Date(Date.now() - 86400 * 1000).toISOString(), actor: partner.name },
+        { status: "PROCESSED", at: new Date().toISOString(), actor: partner.name, note: "Loaded into biodigester. Verified gas: 3.0 m³ (Estimated: 3.4 m³)." },
+      ],
+      inspection: {
+        create: {
+          inspectorId: partner.id,
+          verifiedGrossMassKg: 26.5,
+          rejectedMassKg: 1.5,
+          contaminationRate: 5.66,
+          acceptedMassKg: 25.0,
+          contaminationCategories: ["Plastic wrap"],
+          feedstockCondition: "Clean vegetable trim",
+          conditionFactor: 1.0,
+          decision: "ACCEPTED",
+          notes: "Clean feedstock verified by community operator.",
+          photoUrls: [],
+        },
+      },
+    },
+  });
+
+  await prisma.conversionCycle.create({
+    data: {
+      facilityId: community.facility!.id,
+      cycleCode: "CYC-DEMO-VERIFIED-01",
+      processingDate: new Date(),
+      verifiedGasM3: 3.0, // Measured / verified output
+      operationalUseM3: 0.3,
+      safetyReserveM3: 0.2,
+      allocatableGasM3: 2.5,
+      digestateOutputKg: 10.0,
+      measurementSource: "MANUAL",
+      notes: "Demo cycle: Estimated gas 3.4 m³ vs Measured/Verified gas 3.0 m³.",
+      measurements: {
+        create: {
+          volumeM3: 3.0,
+          source: "MANUAL",
+          measuredAt: new Date(),
+          notes: "Calibrated physical flow meter log.",
+        },
+      },
+      batches: {
+        create: {
+          batchId: batchC.id,
+          massKg: 25.0,
+        },
+      },
+    },
+  });
 
   console.log(`Seeded ORBIT demo. Login password for every demo account: ${password}`);
 }

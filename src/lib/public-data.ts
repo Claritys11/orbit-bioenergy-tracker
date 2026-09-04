@@ -23,7 +23,7 @@ export async function getPublicImpactData() {
     }),
   ]);
 
-  const registeredWaste = batches.reduce((sum, batch) => sum + batch.grossWeightKg, 0);
+  const registeredWaste = batches.reduce((sum, batch) => sum + (batch.grossWeightKg ?? 0), 0);
   const acceptedWaste = inspections.reduce((sum, item) => sum + item.acceptedMassKg, 0);
   const rejectedWaste = inspections.reduce((sum, item) => sum + item.rejectedMassKg, 0);
   const contaminationRate = acceptedWaste + rejectedWaste > 0 ? (rejectedWaste / (acceptedWaste + rejectedWaste)) * 100 : 0;

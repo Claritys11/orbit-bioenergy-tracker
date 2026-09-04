@@ -8,47 +8,47 @@ ORBIT is a production-minded competition prototype built for **JA WE Challenge 2
 
 ---
 
-## ⚡ Core Architecture & Physical-to-Digital Loop
+## ⚡ Core Architecture & Canonical Chain of Custody
 
 ```text
-PHYSICAL WORLD
+CANONICAL OPERATIONAL CHAIN:
 
-School / Market Canteen
-      │
-      ▼ (Reusable Container Tag: CNT-TELKOM-001-01)
-Waste Batch Submitted (1-Scan Canteen UX)
-      │
+School / Canteen Waste Source (CANTEEN_STAFF)
+      │  Select assigned reusable container; mark READY (no official weight entered)
       ▼
-Operator Pickup & Transit (Logistics & Fleet Collection)
-      │
+School Admin (SCHOOL_ADMIN)
+      │  Select accumulated ready containers; request pickup
       ▼
-Community Partner Facility Inspection & Bin Emptying (Container freed: EMPTIED → AVAILABLE)
-      │
+Logistics Operator (OPERATOR)
+      │  Accept/Schedule pickup; route fleet; transport in-transit; deliver to facility
       ▼
-Community Partner Conversion Cycle & Verified Biogas Production
-      │
+Community Facility (COMMUNITY_PARTNER)
+      │  Receive container (/scan)
+      │  Weigh calibrated gross mass (verifiedGrossMassKg)
+      │  Contamination inspection & sorting (rejectedMassKg)
+      │  Automatic calculation of accepted organics & contamination rate
+      │  Conversion Cycle in anaerobic biodigester
+      │  Record measured physical gas output (measuredGasM3 → verifiedGasM3)
       ▼
-Purity-to-Power Energy Allocation & Fulfilment
-
-
-DIGITAL WORLD (ORBIT Engine)
-
-  • Identity & QR Resolver (/c/[qrToken])
-  • Chain of Custody Mass Tracking (declared → collected → verified → accepted)
-  • Superadmin Partner Onboarding & Auto-Sync (/admin/users → /partners)
-  • Purity-to-Power Allocation Engine (50% Schools / 30% Operator / 20% Contributors)
-  • Auditable Supply Chain Journey Timeline
-  • Public Transparency Layer & Energy Return Accounting
+ORBIT Traceability & Allocation Engine
+      │  Automatic Purity-to-Power allocation (Schools, Community Facility, Contributors)
+      ▼
+Community Energy Fulfilment & Public Transparency Layer
 ```
 
 ### Key Principles
 
-1. **Persistent Reusable QR Containers**: QR tags encode permanent digital identities (`CNT-TELKOM-001-01`) attached to physical bins. Schools do NOT print disposable QR codes for every bag.
-2. **1 Active Batch per Container**: Enforced at the database and UI levels to prevent impossible physical duplicates. A container can only create a new batch after the current batch is inspected and emptied at the facility.
-3. **Immediate Container Return to Service**: Containers return to `AVAILABLE` immediately upon facility receipt and inspection, freeing the bin for canteen reuse without waiting for multi-week anaerobic digestion.
-4. **🛡️ No Verified Source Identity = No Source-Specific Energy Allocation**: TPS3R operators may process un-tagged waste, but only verified QR containers allow clean organic contributions to be reliably credited back to participating schools and communities.
-5. **Superadmin Partner Onboarding**: Superadmins can register new Schools, Community Partners, Waste Operators, and Supporting Contributors; new partners dynamically update on the public `/partners` showcase.
-6. **Estimated Gas vs. Verified Gas**: Contribution previews use estimated yield, but energy allocation and fulfilment strictly consume **Verified Gas** recorded post-conversion.
+1. **Role Responsibility Model**:
+   - `CANTEEN_STAFF`: Mark assigned reusable container ready. No weighing, no QR scanner, no pickup scheduling.
+   - `SCHOOL_ADMIN`: Coordinate ready school containers and submit multi-item pickup requests.
+   - `OPERATOR`: Collection and transport logistics ONLY. No contamination inspections, no conversion cycles, no gas verification.
+   - `COMMUNITY_PARTNER`: Community Facility processing workspace. Receives containers, performs calibrated weighing and contamination inspection, records conversion cycles with measured physical gas, and fulfils biogas.
+   - `SUPER_ADMIN`: Platform-wide administration and QR container issuance.
+   - `STUDENT`: Read-only educational learning and public-safe traceability.
+2. **Persistent Reusable QR Containers**: Reusable containers belong to the organisation (`CNT-SMK-001-01`). The physical QR tag identifies the container across endless cycles. Batches do not generate new physical QR codes.
+3. **Verified Mass Belongs to Community**: Source registration does not demand a guessed kilogram value. Official mass is measured on calibrated scales upon facility arrival.
+4. **Separation of Estimated Gas and Verified Gas**: Model estimations are clearly distinguished from physical flow-meter measurements (`measuredGasM3` $\to$ `verifiedGasM3`).
+5. **Automatic Energy Allocation**: Upon verifying physical gas output, ORBIT automatically executes the allocation engine without tedious manual percentage calculations.
 
 ---
 
@@ -56,19 +56,19 @@ DIGITAL WORLD (ORBIT Engine)
 
 | Stakeholder | Role in Supply Chain | Incentives & Returns |
 | :--- | :--- | :--- |
-| **School / Canteen** | Source separation & container registration | Verified energy credits, LPG savings, and public sustainability impact |
-| **TPS3R Operator** | Logistical collection, fleet routes & container pickup | Reliable route scheduling, container tracking & logistics efficiency |
-| **Community Partner** | Quality inspection, biodigester conversion & gas allocation | Clean energy conversion, digestate fertilizer & local community impact |
+| **School / Canteen** | Source separation & container readiness | Verified energy credits, LPG savings, and public sustainability recognition |
+| **TPS3R Logistics Operator** | Collection scheduling, vehicle routes & transport | Efficient logistics routing, container tracking & transport transparency |
+| **Community Facility** | Receiving, calibrated weighing, inspection, conversion & gas measurement | Clean biogas processing, bio-fertilizer digestate, local clean cooking gas |
 | **Supporting Contributor** | Market/vendor feedstock stabilization | Organic waste disposal & supporting pool energy allocation |
-| **ORBIT Platform** | Digital coordination, accounting & audit logs | Small platform maintenance fee (5% pilot default) |
+| **ORBIT Platform** | Digital coordination, automated allocation & audit logs | Platform integrity & public impact transparency |
 
 ---
 
 ## 🛠️ Stack
 
-- **Framework**: Next.js App Router, TypeScript strict mode, Tailwind CSS
+- **Framework**: Next.js App Router (Turbopack), TypeScript strict mode, Vanilla Tailwind CSS
 - **Database & Auth**: PostgreSQL, Prisma ORM, Auth.js (Credentials login with bcrypt hashes)
-- **Validation & Business Logic**: Zod validation, Server-side RBAC, isolated domain logic in `src/lib/domain`
+- **Validation & Business Logic**: Zod validation schemas, Server-side RBAC, isolated domain logic in `src/lib/domain`
 - **Analytics & QR**: Recharts analytics, QR generation (`qrcode`), browser scanning (`html5-qrcode`)
 - **Testing**: Vitest unit tests, Playwright E2E testing framework
 - **Environment**: Docker Compose for local PostgreSQL (Port 55432)
@@ -114,26 +114,26 @@ All demo accounts use the password: **`OrbitDemo2026!`**
 | Role | Email | Scope & Wewenang Utama |
 | :--- | :--- | :--- |
 | `SUPER_ADMIN` | `super@orbit.test` | QR container issuance (`/admin/containers`), partner organisation & user registration (`/admin/users`), system settings, global audit logs, allocation configuration |
-| `SCHOOL_ADMIN` | `school@orbit.test` | School container overview, waste batch history, multi-item pickup request creation (`/operations/pickups`), pickup progress monitoring, energy credit & impact reports |
-| `CANTEEN_STAFF` | `canteen@orbit.test` | Mobile 1-scan reusable container load registration (`/c/[qrToken]` or `/batches/new`), declared mass entry, category confirmation, sorting feedback |
+| `SCHOOL_ADMIN` | `school@orbit.test` | Ready waste batches overview, multi-item pickup request creation (`/operations/pickups`), pickup monitoring, energy credit & impact reports |
+| `CANTEEN_STAFF` | `canteen@orbit.test` | Simple reusable container load registration (`/batches/new`): select container $\to$ mark ready $\to$ done |
 | `STUDENT` | `student@orbit.test` | Educational waste journey trace, sorting accuracy feedback, public school impact reports |
-| `OPERATOR` | `operator@orbit.test` | Incoming pickup request review (Accept/Reject), vehicle fleet route scheduling, collection transit, facility contamination inspection, conversion cycles, verified gas recording, allocation calculation & fulfilment, biodigester safety |
-| `COMMUNITY_PARTNER` | `community@orbit.test` | Read-only monitoring of community allocation pools, local energy benefit, fulfilment status, approved facility performance, and public impact reports |
+| `OPERATOR` | `operator@orbit.test` | Logistics & transport ONLY: Pickup request review (Accept/Reject), fleet routes, collection in transit, delivery confirmation to facility (`/operations/pickups`) |
+| `COMMUNITY_PARTNER` | `community@orbit.test` | Community Facility processing workspace: Receive container (`/scan`), calibrated weighing & contamination inspection (`/operations/inspections`), conversion cycles with measured gas (`/operations/conversions`), energy fulfilment (`/operations/fulfilment`) |
 
 ---
 
 ## 📐 Role Permissions & Architecture
 
-ORBIT is built as a **Modular Monolith**. Server components query database models directly through Prisma, while mutations execute through Server Actions guarded by Zod validation schemas and RBAC checks (`src/lib/services/authz.ts` and `src/lib/domain/rbac.ts`).
+ORBIT enforces capability-based security. Server components query database models directly through Prisma, while mutations execute through Server Actions guarded by Zod validation schemas and RBAC checks (`src/lib/services/authz.ts` and `src/lib/domain/rbac.ts`).
 
-| Role | Main Permissions |
-| :--- | :--- |
-| `SUPER_ADMIN` | `manage_system`, `manage_org`, `manage_containers`, `issue_qr`, `create_waste_record`, `view_batches`, `request_pickup`, `respond_pickup_request`, `manage_pickup_logistics`, `inspect_batch`, `record_conversion`, `calculate_allocation`, `fulfil_allocation`, `view_reports`, `view_audit`, `manage_safety` |
-| `SCHOOL_ADMIN` | `manage_org`, `view_reports`, `view_audit`, `view_batches`, `request_pickup` |
-| `CANTEEN_STAFF` | `create_waste_record`, `create_batch`, `view_batches`, `view_reports` |
-| `STUDENT` | `view_student`, `view_reports` (Public-safe trace only) |
-| `OPERATOR` | `respond_pickup_request`, `manage_pickup_logistics`, `inspect_batch`, `record_conversion`, `calculate_allocation`, `fulfil_allocation`, `manage_safety`, `view_reports`, `view_batches` |
-| `COMMUNITY_PARTNER` | `view_reports` (Read-only monitoring) |
+| Role | Main Permissions | Forbidden Operations |
+| :--- | :--- | :--- |
+| `SUPER_ADMIN` | Full platform administration | None |
+| `SCHOOL_ADMIN` | `manage_org`, `view_reports`, `view_audit`, `view_batches`, `request_pickup` | `inspect_batch`, `record_conversion`, `manage_pickup_logistics`, `fulfil_allocation` |
+| `CANTEEN_STAFF` | `create_waste_record`, `create_batch`, `view_batches`, `view_reports` | `inspect_batch`, `record_conversion`, `receive_container`, `request_pickup`, `manage_pickup_logistics` |
+| `STUDENT` | `view_student`, `view_reports` (Public-safe trace only) | All operational mutations |
+| `OPERATOR` | `respond_pickup_request`, `manage_pickup_logistics`, `view_reports`, `view_batches` | `inspect_batch`, `record_conversion`, `calculate_allocation`, `fulfil_allocation`, `receive_container` |
+| `COMMUNITY_PARTNER` | `receive_container`, `inspect_batch`, `record_conversion`, `fulfil_allocation`, `manage_safety`, `view_reports`, `view_batches` | `respond_pickup_request`, `manage_pickup_logistics`, `request_pickup` |
 
 ---
 
