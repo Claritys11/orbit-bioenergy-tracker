@@ -26,7 +26,21 @@ export default async function PublicImpactPage() {
             <Card key={item}><p className="leading-7">{item}</p></Card>
           ))}
         </div>
-        <LinkButton href="/methodology" className="mt-8">Read calculation methodology</LinkButton>
+        <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Partner Contribution Transparency</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Explore the schools, community operators, and local vendors driving this verified bioenergy impact.
+            </p>
+          </div>
+          <LinkButton href="/partners" className="shrink-0">
+            See Who Contributed →
+          </LinkButton>
+        </div>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <LinkButton href="/methodology" variant="secondary">Read calculation methodology</LinkButton>
+          <LinkButton href="/transparency" variant="secondary">View live transparency feed</LinkButton>
+        </div>
       </main>
       <PublicFooter />
     </>

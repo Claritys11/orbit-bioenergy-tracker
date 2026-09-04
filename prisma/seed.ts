@@ -29,8 +29,8 @@ async function user(name: string, email: string, role: Role, organisationId: str
 
 async function main() {
   const existingPickups = await prisma.pickupRequest.count().catch(() => 0);
-  if (existingPickups > 0) {
-    console.log("Database already initialized with data. Skipping seed to preserve production data.");
+  if (existingPickups > 0 && process.env.FORCE_SEED !== "true") {
+    console.log("Database already initialized with data. Skipping seed to preserve production data (use FORCE_SEED=true to override).");
     return;
   }
 
@@ -352,42 +352,31 @@ async function main() {
 
   // Seed Historical Processed Batches & Conversion Cycle
   const batchInputs = [
-    {
-      org: schoolA,
-      source: schoolA.sources[0],
-      category: categories[1],
-      container: containerSchoolA,
-      user: canteenStaff,
-      gross: 62,
-      status: "ACCEPTED" as const,
-      rejected: 2.5,
-      conditionFactor: 0.98,
-      code: "ORB-2026-100231",
-    },
-    {
-      org: schoolB,
-      source: schoolB.sources[0],
-      category: categories[0],
-      container: containerSchoolB,
-      user: schoolAdmin,
-      gross: 44,
-      status: "CONDITIONAL" as const,
-      rejected: 6.6,
-      conditionFactor: 0.82,
-      code: "ORB-2026-100232",
-    },
-    {
-      org: market,
-      source: market.sources[0],
-      category: categories[3],
-      container: containerMarket,
-      user: partner,
-      gross: 38,
-      status: "ACCEPTED" as const,
-      rejected: 1.1,
-      conditionFactor: 1.05,
-      code: "ORB-2026-100233",
-    },
+    // School A: 7 consecutive weeks (Weeks 30 to 36) -> 7-week active streak, high quality
+    { org: schoolA, source: schoolA.sources[0], category: categories[1], container: containerSchoolA, user: canteenStaff, gross: 22, status: "ACCEPTED" as const, rejected: 0.6, conditionFactor: 0.98, code: "ORB-2026-100201", date: "2026-07-23T02:30:00.000Z" },
+    { org: schoolA, source: schoolA.sources[0], category: categories[1], container: containerSchoolA, user: canteenStaff, gross: 24, status: "ACCEPTED" as const, rejected: 0.7, conditionFactor: 0.99, code: "ORB-2026-100202", date: "2026-07-30T02:30:00.000Z" },
+    { org: schoolA, source: schoolA.sources[0], category: categories[1], container: containerSchoolA, user: canteenStaff, gross: 20, status: "ACCEPTED" as const, rejected: 0.5, conditionFactor: 0.98, code: "ORB-2026-100203", date: "2026-08-06T02:30:00.000Z" },
+    { org: schoolA, source: schoolA.sources[0], category: categories[1], container: containerSchoolA, user: canteenStaff, gross: 26, status: "ACCEPTED" as const, rejected: 0.8, conditionFactor: 0.97, code: "ORB-2026-100204", date: "2026-08-13T02:30:00.000Z" },
+    { org: schoolA, source: schoolA.sources[0], category: categories[1], container: containerSchoolA, user: canteenStaff, gross: 28, status: "ACCEPTED" as const, rejected: 0.9, conditionFactor: 0.98, code: "ORB-2026-100205", date: "2026-08-20T02:30:00.000Z" },
+    { org: schoolA, source: schoolA.sources[0], category: categories[1], container: containerSchoolA, user: canteenStaff, gross: 25, status: "ACCEPTED" as const, rejected: 0.7, conditionFactor: 0.98, code: "ORB-2026-100206", date: "2026-08-27T02:30:00.000Z" },
+    { org: schoolA, source: schoolA.sources[0], category: categories[1], container: containerSchoolA, user: canteenStaff, gross: 22, status: "ACCEPTED" as const, rejected: 0.5, conditionFactor: 0.98, code: "ORB-2026-100207", date: "2026-09-02T02:30:00.000Z" },
+
+    // School B: High volume, lower consistency (missed weeks, moderate contamination)
+    { org: schoolB, source: schoolB.sources[0], category: categories[0], container: containerSchoolB, user: schoolAdmin, gross: 45, status: "CONDITIONAL" as const, rejected: 5.5, conditionFactor: 0.85, code: "ORB-2026-100211", date: "2026-07-29T03:00:00.000Z" },
+    { org: schoolB, source: schoolB.sources[0], category: categories[0], container: containerSchoolB, user: schoolAdmin, gross: 48, status: "CONDITIONAL" as const, rejected: 6.2, conditionFactor: 0.82, code: "ORB-2026-100212", date: "2026-08-19T03:00:00.000Z" },
+    { org: schoolB, source: schoolB.sources[0], category: categories[0], container: containerSchoolB, user: schoolAdmin, gross: 52, status: "CONDITIONAL" as const, rejected: 7.1, conditionFactor: 0.84, code: "ORB-2026-100213", date: "2026-08-26T03:00:00.000Z" },
+    { org: schoolB, source: schoolB.sources[0], category: categories[0], container: containerSchoolB, user: schoolAdmin, gross: 44, status: "CONDITIONAL" as const, rejected: 6.6, conditionFactor: 0.82, code: "ORB-2026-100214", date: "2026-09-03T03:00:00.000Z" },
+
+    // School C (SMK Telkom Malang): 4 consecutive weeks, excellent quality, high volume
+    { org: schoolC, source: schoolC.sources[0], category: categories[1], container: containerSchoolC, user: schoolAdmin, gross: 32, status: "ACCEPTED" as const, rejected: 0.8, conditionFactor: 0.99, code: "ORB-2026-100221", date: "2026-08-12T02:00:00.000Z" },
+    { org: schoolC, source: schoolC.sources[0], category: categories[1], container: containerSchoolC, user: schoolAdmin, gross: 35, status: "ACCEPTED" as const, rejected: 0.9, conditionFactor: 0.98, code: "ORB-2026-100222", date: "2026-08-19T02:00:00.000Z" },
+    { org: schoolC, source: schoolC.sources[0], category: categories[1], container: containerSchoolC, user: schoolAdmin, gross: 38, status: "ACCEPTED" as const, rejected: 1.0, conditionFactor: 0.99, code: "ORB-2026-100223", date: "2026-08-26T02:00:00.000Z" },
+    { org: schoolC, source: schoolC.sources[0], category: categories[1], container: containerSchoolC, user: schoolAdmin, gross: 34, status: "ACCEPTED" as const, rejected: 0.7, conditionFactor: 0.98, code: "ORB-2026-100224", date: "2026-09-02T02:00:00.000Z" },
+
+    // Market: Supporting Contributor
+    { org: market, source: market.sources[0], category: categories[3], container: containerMarket, user: partner, gross: 35, status: "ACCEPTED" as const, rejected: 1.0, conditionFactor: 1.05, code: "ORB-2026-100231", date: "2026-08-14T04:00:00.000Z" },
+    { org: market, source: market.sources[0], category: categories[3], container: containerMarket, user: partner, gross: 38, status: "ACCEPTED" as const, rejected: 1.1, conditionFactor: 1.05, code: "ORB-2026-100232", date: "2026-08-21T04:00:00.000Z" },
+    { org: market, source: market.sources[0], category: categories[3], container: containerMarket, user: partner, gross: 40, status: "ACCEPTED" as const, rejected: 1.2, conditionFactor: 1.05, code: "ORB-2026-100233", date: "2026-08-28T04:00:00.000Z" },
   ];
 
   const processedBatches = [];
@@ -399,16 +388,18 @@ async function main() {
       rejectThresholdPercent: config.contaminationReject,
     });
 
+    const itemDate = new Date(item.date);
+
     const req = await prisma.pickupRequest.create({
       data: {
         requestCode: `REQ-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
         schoolOrganisationId: item.org.id,
         requestedByUserId: item.user.id,
-        proposedPickupStart: new Date("2026-08-20T04:00:00.000Z"),
-        proposedPickupEnd: new Date("2026-08-20T08:00:00.000Z"),
+        proposedPickupStart: itemDate,
+        proposedPickupEnd: new Date(itemDate.getTime() + 4 * 3600 * 1000),
         status: "DELIVERED",
-        acceptedAt: new Date("2026-08-20T04:30:00.000Z"),
-        actualScheduledAt: new Date("2026-08-20T06:00:00.000Z"),
+        acceptedAt: new Date(itemDate.getTime() + 30 * 60 * 1000),
+        actualScheduledAt: new Date(itemDate.getTime() + 2 * 3600 * 1000),
       },
     });
 
@@ -426,15 +417,15 @@ async function main() {
         verifiedGrossMassKg: item.gross,
         rejectedMassKg: item.rejected,
         acceptedMassKg: result.acceptedMassKg,
-        collectionTimestamp: new Date("2026-08-20T02:30:00.000Z"),
+        collectionTimestamp: itemDate,
         responsibleUserId: item.user.id,
         storageStatus: "Covered bin, labelled demo data",
         pickupStatus: "DELIVERED",
         status: item.status,
         activityTimeline: [
-          { status: "READY_FOR_PICKUP", at: "2026-08-20T02:45:00.000Z", actor: item.user.name },
-          { status: "DELIVERED", at: "2026-08-20T07:30:00.000Z", actor: operator.name },
-          { status: item.status, at: "2026-08-20T08:15:00.000Z", actor: operator.name },
+          { status: "READY_FOR_PICKUP", at: itemDate.toISOString(), actor: item.user.name },
+          { status: "DELIVERED", at: new Date(itemDate.getTime() + 2 * 3600 * 1000).toISOString(), actor: operator.name },
+          { status: item.status, at: new Date(itemDate.getTime() + 3 * 3600 * 1000).toISOString(), actor: operator.name },
         ],
         pickupRequestItem: { create: { pickupRequestId: req.id } },
         inspection: {

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import {
+  Award,
   BookOpen,
   ClipboardCheck,
   Factory,
@@ -125,6 +126,8 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
   const rejected = inspections.filter((inspection) => inspection.decision === "REJECTED").length;
   const actions = nextActions[user.role].filter((action) => !action.permission || can(user.role, action.permission));
 
+  const userOrg = orgs.find((o) => o.id === user.organisationId);
+
   return (
     <div className="grid gap-6">
       <PageHeader
@@ -142,6 +145,27 @@ export async function RoleDashboard({ expectedRole }: { expectedRole: Role }) {
           )
         }
       />
+      {userOrg && userOrg.type !== "PLATFORM" ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--orbit-primary)]/10 text-[var(--orbit-primary)]">
+              <Award size={20} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="font-bold text-slate-900">Your Public Impact & Recognition Profile</p>
+                <Badge tone="green">Active Partner</Badge>
+              </div>
+              <p className="text-xs text-slate-500">
+                Track your organisation&apos;s weekly contribution streak, sorting acceptance rate, and unlocked badges on the ORBIT Partner Network.
+              </p>
+            </div>
+          </div>
+          <LinkButton href={`/partners/${userOrg.slug}`} variant="secondary" className="shrink-0 text-xs">
+            View Public Profile →
+          </LinkButton>
+        </div>
+      ) : null}
       <div className="grid gap-4 md:grid-cols-4">
         <Metric label="Accepted organic waste" value={formatKg(acceptedMass)} hint="Operator-inspected accepted mass." />
         <Metric label="Verified biogas" value={formatGas(verifiedGas)} hint="Measured cycle records, not estimates." />
