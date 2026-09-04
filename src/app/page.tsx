@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Building2, Factory, GraduationCap, ShieldCheck, Store, Users, Zap } from "lucide-react";
 import { PublicFooter } from "@/components/public/public-footer";
@@ -44,29 +45,42 @@ export default async function Home() {
     <>
       <PublicHeader />
       <main id="main" className="bg-[var(--background)]">
-        <section className="border-b border-[var(--orbit-border)] bg-white">
-          <div className="orbit-container grid min-h-[82vh] gap-10 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+        <section className="relative overflow-hidden border-b border-[var(--orbit-border)] bg-slate-950 text-white">
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="/pexels-tomfisk-5424854.jpg"
+              alt="Organic waste management background"
+              fill
+              priority
+              className="object-cover object-center brightness-[0.4] contrast-[1.05]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/85 to-slate-900/75 backdrop-blur-[2px]" />
+          </div>
+
+          <div className="orbit-container relative z-10 grid min-h-[82vh] gap-10 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
               <Badge tone="amber">JA WE Challenge 2026 Competition Prototype</Badge>
-              <h1 className="mt-5 max-w-4xl text-5xl font-bold tracking-normal text-[var(--orbit-primary)] md:text-7xl">
-                Turning cleaner school waste into traceable community energy.
+              <h1 className="mt-5 max-w-4xl text-5xl font-bold tracking-normal text-white drop-shadow-md md:text-7xl">
+                Turning cleaner school waste into <span className="text-[#00C972]">traceable community energy.</span>
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 font-medium">
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200 font-medium">
                 ORBIT is a digital coordination and traceability system connecting schools with community waste-to-energy operators, turning verified organic waste contributions into measurable and traceable energy returns.
               </p>
-              <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 font-semibold">
+              <div className="mt-5 rounded-lg border border-amber-300/40 bg-amber-950/60 p-4 text-sm text-amber-200 font-semibold shadow-lg backdrop-blur-md">
                 🛡️ No verified source identity = No source-specific energy allocation. Persistent reusable QR containers bridge physical waste flow directly with ORBIT bioenergy accounting.
               </div>
               <div className="mt-8 flex flex-wrap gap-3">
-                <LinkButton href="/transparency" className="bg-[var(--orbit-primary)]">
+                <LinkButton href="/transparency" className="bg-[var(--orbit-primary)] text-white hover:bg-[var(--orbit-primary-dark)] font-bold shadow-md">
                   Explore Live Impact <ArrowRight size={16} aria-hidden />
                 </LinkButton>
-                <LinkButton href="#how-it-works" variant="secondary">See How It Works</LinkButton>
+                <LinkButton href="#how-it-works" variant="secondary" className="border-white/30 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md">
+                  See How It Works
+                </LinkButton>
               </div>
             </div>
-            <div className="rounded-lg border border-[var(--orbit-border)] bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-white/20 bg-white/95 text-slate-900 p-5 shadow-2xl backdrop-blur-md">
               <SystemFlow />
-              <div className="mt-5 rounded-md border border-[var(--orbit-energy)]/35 bg-[var(--orbit-energy)]/10 p-4 text-sm leading-6 text-black">
+              <div className="mt-5 rounded-md border border-[var(--orbit-primary)]/20 bg-[var(--orbit-primary)]/5 p-4 text-sm leading-6 text-slate-900 font-medium">
                 The biodigester is not assumed to be installed at every school. ORBIT coordinates
                 source quality, logistics, partner conversion, verified measurement, and allocation.
               </div>
