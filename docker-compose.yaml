@@ -9,7 +9,7 @@ services:
     command:
       - sh
       - -c
-      - "npx prisma generate && (i=0; until npx prisma db push --accept-data-loss; do i=$((i+1)); if [ $i -ge 10 ]; then exit 1; fi; echo 'Waiting for database...'; sleep 3; done) && npx prisma db seed"
+      - "npx prisma generate && (i=0; until npx prisma db push --force-reset; do i=$((i+1)); if [ $i -ge 10 ]; then exit 1; fi; echo 'Waiting for database...'; sleep 3; done) && npx prisma db seed"
     restart: "no"
 
   orbit:
