@@ -54,7 +54,11 @@ export default async function PickupsPage() {
     <div className="grid gap-6">
       <PageHeader
         title="Organic Waste Pickup Operations"
-        description="First-class demand collection system connecting school waste generation with bioenergy operator logistics."
+        description="Demand collection & transport system connecting school canteen waste with bioenergy operator logistics."
+        breadcrumbs={[
+          { label: "Overview", href: "/dashboard" },
+          { label: "Pickup Operations" },
+        ]}
       />
 
       {isSchoolUser ? (

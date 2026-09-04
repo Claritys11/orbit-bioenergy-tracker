@@ -9,7 +9,11 @@ export default async function ScanPage() {
     <div className="grid gap-6">
       <PageHeader
         title="Receive Container"
-        description="Receive incoming organic waste containers delivered from schools. Identify container codes to queue batches for verified weighing and inspection."
+        description="Receive incoming organic waste containers delivered from schools. Identify container codes to queue batches for calibrated weighing and inspection."
+        breadcrumbs={[
+          { label: "Overview", href: "/dashboard" },
+          { label: "Receive Container" },
+        ]}
       />
       <ContainerReceiver />
     </div>
