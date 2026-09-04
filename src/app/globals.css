@@ -79,8 +79,47 @@ textarea {
 }
 
 @media print {
-  .no-print {
+  @page {
+    margin: 1cm;
+    size: auto;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Hide entire page UI by default when printing */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Exclusively reveal and position the printable container tag */
+  .orbit-print-tag,
+  .orbit-print-tag * {
+    visibility: visible;
+  }
+
+  .orbit-print-tag {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 20px;
+    margin-inline: auto !important;
+    width: 380px !important;
+    max-width: 100% !important;
+    border: 2px solid #000000 !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  .no-print,
+  .no-print * {
     display: none !important;
+    visibility: hidden !important;
   }
 }
 

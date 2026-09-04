@@ -84,9 +84,16 @@ export default async function ContainerAdaptivePage({
   );
 
   const isRevoked = !container.isActive || container.status === "REVOKED";
-  const isUserOrgMember = user && (user.organisationId === container.organisationId || user.role === "SUPER_ADMIN");
+  const isCommunityRole = Boolean(
+    user && ["COMMUNITY_PARTNER", "CANTEEN_STAFF", "SCHOOL_ADMIN"].includes(user.role)
+  );
+  const isCommunityAuthorized = Boolean(
+    user &&
+    isCommunityRole &&
+    (user.role === "COMMUNITY_PARTNER" || user.organisationId === container.organisationId || !user.organisationId)
+  );
   const canSubmitBatch = Boolean(
-    user && isUserOrgMember && (user.role === "CANTEEN_STAFF" || user.role === "SUPER_ADMIN") && !isRevoked && !activeBatch
+    isCommunityAuthorized && !isRevoked && !activeBatch
   );
 
   const batchesCount = container.batches.length;
@@ -239,53 +246,70 @@ export default async function ContainerAdaptivePage({
               <span className="text-xs font-medium text-slate-500">{user.email}</span>
             </div>
 
-            {/* CANTEEN_STAFF / SUPPORTING_CONTRIBUTOR Form */}
+            {/* COMMUNITY Form (Community Partner / Canteen Staff / School Admin) */}
             {canSubmitBatch ? (
               <div className="mt-4">
-                <h3 className="text-sm font-bold text-slate-900">
-                  Register New Waste Batch for {container.containerCode}
-                </h3>
-                <p className="mt-1 text-xs text-slate-600">
-                  Fill up this reusable container and submit declared mass for operator collection.
-                </p>
-                <form action={createBatchFromContainerFormAction} className="mt-4 grid gap-4 rounded-lg bg-white p-4 border border-slate-200">
-                  <input type="hidden" name="containerId" value={container.id} />
-                  
-                  <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border-2 border-emerald-500/30 bg-emerald-50/50 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                        COMMUNITY BATCH REGISTRATION
+                      </span>
+                      <h3 className="text-base font-bold text-slate-900">
+                        Register New Waste Batch for {container.containerCode}
+                      </h3>
+                    </div>
+                    <Badge tone="green">Ready to Fill</Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Fill up this reusable container and submit declared mass for operator collection.
+                  </p>
+                  <form action={createBatchFromContainerFormAction} className="mt-4 grid gap-4 rounded-lg bg-white p-4 border border-slate-200 shadow-sm">
+                    <input type="hidden" name="containerId" value={container.id} />
+                    
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="grid gap-1 text-sm font-medium text-slate-800">
+                        Declared Waste Weight (kg) *
+                        <input
+                          type="number"
+                          name="declaredMassKg"
+                          step="0.1"
+                          min="0.5"
+                          max={container.capacityKg ? container.capacityKg * 1.5 : 500}
+                          required
+                          placeholder={container.capacityKg ? `e.g. ${(container.capacityKg * 0.7).toFixed(1)}` : "e.g. 18.5"}
+                          className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm"
+                        />
+                      </label>
+                      
+                      <label className="grid gap-1 text-sm font-medium text-slate-800">
+                        Audit Photo (Optional)
+                        <PhotoUpload name="photoUrl" />
+                      </label>
+                    </div>
+
                     <label className="grid gap-1 text-sm font-medium text-slate-800">
-                      Declared Waste Weight (kg) *
+                      Notes / Sorting Condition (Optional)
                       <input
-                        type="number"
-                        name="declaredMassKg"
-                        step="0.1"
-                        min="0.5"
-                        max="500"
-                        required
-                        placeholder="e.g. 18.5"
+                        type="text"
+                        name="notes"
+                        placeholder="e.g. Clean canteen food scraps, pre-sorted"
                         className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm"
                       />
                     </label>
-                    
-                    <label className="grid gap-1 text-sm font-medium text-slate-800">
-                      Audit Photo (Optional)
-                      <PhotoUpload name="photoUrl" />
-                    </label>
-                  </div>
 
-                  <label className="grid gap-1 text-sm font-medium text-slate-800">
-                    Notes / Sorting Condition (Optional)
-                    <input
-                      type="text"
-                      name="notes"
-                      placeholder="e.g. Clean canteen food scraps, pre-sorted"
-                      className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm"
-                    />
-                  </label>
+                    <Button type="submit" variant="primary" className="mt-2">
+                      🚀 Submit Batch & Request Pickup
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            ) : null}
 
-                  <Button type="submit" variant="primary" className="mt-2">
-                    🚀 Submit Batch & Request Pickup
-                  </Button>
-                </form>
+            {/* Non-authorized Community or other org notice */}
+            {!canSubmitBatch && isCommunityRole && !activeBatch ? (
+              <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                You are logged in as {user.name} ({user.role}) from {user.organisationName || "your organisation"}. Only registered community members of <strong>{container.organisation.name}</strong> can submit batches for this container.
               </div>
             ) : null}
 
@@ -305,27 +329,39 @@ export default async function ContainerAdaptivePage({
 
             {/* SUPER_ADMIN Controls */}
             {user.role === "SUPER_ADMIN" ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <LinkButton href="/admin/containers" variant="secondary">
-                  ⚙️ Super Admin Container Management
-                </LinkButton>
-                <LinkButton href={`/c/${container.qrToken}`} variant="ghost">
-                  🔄 Refresh View
-                </LinkButton>
+              <div className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50/70 p-4 text-xs text-indigo-950">
+                <div className="flex items-center gap-2 font-bold text-indigo-900 text-sm">
+                  👑 Super Admin View
+                </div>
+                <p className="mt-1 leading-relaxed">
+                  Batch registration for this reusable container is reserved for community partners and canteen staff of <strong className="font-semibold">{container.organisation.name}</strong>.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <LinkButton href="/admin/containers" variant="secondary" className="text-xs">
+                    ⚙️ Super Admin Container Management
+                  </LinkButton>
+                  <LinkButton href={`/c/${container.qrToken}`} variant="ghost" className="text-xs">
+                    🔄 Refresh View
+                  </LinkButton>
+                </div>
               </div>
             ) : null}
           </Card>
         ) : (
           /* UNAUTHENTICATED PUBLIC VIEW NOTICE */
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">
             <div className="flex items-center gap-2 font-bold text-slate-900">
               🔒 Public-Safe View Mode
             </div>
             <p className="mt-1 text-xs leading-relaxed text-slate-600">
-              You are scanning in public transparency mode. Operational controls are protected by server-side role authorization. Canteen staff or operators must sign in to initiate pickup requests or inspections.
+              You are scanning this container in public transparency mode. Waste batch registration is authenticated and reserved for community partners and canteen staff.
             </p>
-            <LinkButton href="/login" variant="secondary" className="mt-3 text-xs">
-              Log In for Operational Access
+            <LinkButton
+              href={`/login?callbackUrl=${encodeURIComponent(`/c/${container.qrToken}`)}`}
+              variant="primary"
+              className="mt-3 text-xs font-semibold"
+            >
+              🔑 Log In as Community to Register Waste Batch
             </LinkButton>
           </div>
         )}

@@ -22,77 +22,83 @@ export function ContainerQrTag({
   const [dataUrl, setDataUrl] = useState("");
   const publicUrl = typeof window !== "undefined"
     ? `${window.location.origin}/c/${qrToken}`
-    : `https://orbit.test/c/${qrToken}`;
+    : `https://jawe.clarityz.my.id/c/${qrToken}`;
 
   useEffect(() => {
     QRCode.toDataURL(publicUrl, {
-      margin: 2,
-      width: 280,
+      margin: 1,
+      width: 320,
       color: {
-        dark: "#0f172a",
+        dark: "#000000",
         light: "#ffffff",
       },
     }).then(setDataUrl);
   }, [publicUrl]);
 
   return (
-    <div className="mx-auto max-w-sm rounded-xl border-2 border-slate-900 bg-white p-6 shadow-md print:border-slate-900 print:shadow-none">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+    <div className="orbit-print-tag mx-auto max-w-sm rounded-xl border-2 border-slate-950 bg-white p-6 shadow-md print:border-2 print:border-black print:p-6 print:shadow-none">
+      {/* Header */}
+      <div className="flex items-start justify-between border-b-2 border-slate-950 pb-3">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--orbit-primary)]">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 print:text-black">
             ORBIT PERSISTENT DIGITAL TAG
           </span>
-          <h3 className="text-xl font-black text-slate-900">{containerCode}</h3>
+          <h3 className="mt-0.5 text-xl font-black tracking-tight text-slate-950">
+            {containerCode}
+          </h3>
         </div>
-        <span className="rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+        <span className="rounded border border-emerald-600 bg-emerald-50 px-2 py-0.5 text-[11px] font-black tracking-wider text-emerald-800 print:border-black print:bg-transparent print:text-black">
           REUSABLE
         </span>
       </div>
 
-      <div className="my-4 text-center">
+      {/* QR Code and Tag Caption */}
+      <div className="my-5 text-center">
         {dataUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={dataUrl}
             alt={`QR Tag for ${containerCode}`}
-            className="mx-auto h-52 w-52 rounded border border-slate-100 p-1"
+            className="mx-auto h-52 w-52 rounded border border-slate-200 p-1 print:border-0 print:p-0"
           />
         ) : (
           <div className="mx-auto h-52 w-52 animate-pulse rounded bg-slate-100" />
         )}
-        <p className="mt-2 font-mono text-xs font-semibold text-slate-600">{publicUrl}</p>
-      </div>
-
-      <div className="grid gap-2 rounded-lg bg-slate-50 p-3 text-xs">
-        <div className="flex justify-between">
-          <span className="text-slate-500">Origin Org:</span>
-          <span className="font-bold text-slate-900">{orgName}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">Waste Source:</span>
-          <span className="font-bold text-slate-900">{sourceName}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">Feedstock Type:</span>
-          <span className="font-bold text-slate-900">{categoryName}</span>
-        </div>
-        {capacityKg ? (
-          <div className="flex justify-between">
-            <span className="text-slate-500">Max Capacity:</span>
-            <span className="font-bold text-slate-900">{capacityKg} kg</span>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-center text-[11px] font-semibold leading-tight text-amber-900">
-        🛡️ No QR = No Traceable Credit
-        <p className="mt-0.5 font-normal text-amber-800">
-          Scan to connect physical waste with ORBIT verified energy allocation.
+        <p className="mt-3 text-xs font-bold text-slate-950">
+          QR Tag for {containerCode}
+        </p>
+        <p className="mt-0.5 break-all font-mono text-[11px] font-semibold text-slate-700 print:text-black">
+          {publicUrl}
         </p>
       </div>
 
-      <div className="no-print mt-5 text-center">
-        <Button variant="secondary" className="w-full" onClick={() => window.print()}>
+      {/* Structured Tag Metadata */}
+      <div className="space-y-2.5 border-t-2 border-slate-950 pt-4 text-xs">
+        <div>
+          <p className="font-semibold text-slate-500 print:text-slate-700">Origin Org:</p>
+          <p className="font-bold text-slate-950">{orgName}</p>
+        </div>
+        <div>
+          <p className="font-semibold text-slate-500 print:text-slate-700">Waste Source:</p>
+          <p className="font-bold text-slate-950">{sourceName}</p>
+        </div>
+        <div>
+          <p className="font-semibold text-slate-500 print:text-slate-700">Feedstock Type:</p>
+          <p className="font-bold text-slate-950">{categoryName}</p>
+        </div>
+        <div>
+          <p className="font-semibold text-slate-500 print:text-slate-700">Max Capacity:</p>
+          <p className="font-bold text-slate-950">{capacityKg ? `${capacityKg} kg` : "50 kg"}</p>
+        </div>
+      </div>
+
+      {/* Print Trigger Button (Hidden in Print) */}
+      <div className="no-print mt-6 text-center">
+        <Button
+          variant="secondary"
+          className="w-full font-semibold"
+          onClick={() => window.print()}
+        >
           🖨️ Print Container Tag
         </Button>
       </div>

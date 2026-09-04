@@ -34,6 +34,7 @@ function token() {
 
 export async function loginAction(_: unknown, formData: FormData) {
   const email = String(formData.get("email") ?? "");
+  const callbackUrl = String(formData.get("callbackUrl") ?? "").trim();
   if (!rateLimit(`login:${email.toLowerCase()}`).ok) {
     return { error: "Too many attempts. Please wait a minute and try again." };
   }
@@ -43,10 +44,22 @@ export async function loginAction(_: unknown, formData: FormData) {
       where: { email: email.toLowerCase() },
       select: { deletedAt: true, role: true },
     });
+
+    const isValidCallback =
+      callbackUrl.startsWith("/") &&
+      !callbackUrl.startsWith("//") &&
+      !callbackUrl.startsWith("/login");
+
+    const redirectTo = isValidCallback
+      ? callbackUrl
+      : user && !user.deletedAt
+      ? roleDashboardPath(user.role as Role)
+      : "/dashboard";
+
     await signIn("credentials", {
       email,
       password: String(formData.get("password") ?? ""),
-      redirectTo: user && !user.deletedAt ? roleDashboardPath(user.role as Role) : "/dashboard",
+      redirectTo,
     });
   } catch (error) {
     if (isRedirectError(error)) throw error;
@@ -1108,7 +1121,16 @@ export async function createBatchFromContainerAction(_: unknown, formData: FormD
     return { error: "This container has been revoked or deactivated." };
   }
 
-  if (user.role !== "SUPER_ADMIN" && user.organisationId !== container.organisationId) {
+  if (user.role === "SUPER_ADMIN") {
+    return { error: "Batch registration for reusable containers is reserved for community partners and canteen staff." };
+  }
+
+  const isCommunityRole = ["COMMUNITY_PARTNER", "CANTEEN_STAFF", "SCHOOL_ADMIN"].includes(user.role);
+  const isAuthorized =
+    isCommunityRole &&
+    (user.role === "COMMUNITY_PARTNER" || user.organisationId === container.organisationId || !user.organisationId);
+
+  if (!isAuthorized) {
     return { error: "You are not authorized to submit batches for another organization's container." };
   }
 
