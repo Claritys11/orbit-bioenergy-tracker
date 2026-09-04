@@ -10,7 +10,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npx prisma db seed"]
 
 FROM base AS builder
 WORKDIR /app
