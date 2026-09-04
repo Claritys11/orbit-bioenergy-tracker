@@ -45,47 +45,50 @@ export default async function Home() {
     <>
       <PublicHeader />
       <main id="main" className="bg-[var(--background)]">
-        <section className="relative overflow-hidden border-b border-[var(--orbit-border)] bg-slate-950 text-white">
+        <section className="relative overflow-hidden bg-slate-950 text-white">
           <div className="absolute inset-0 z-0">
             <Image
               src="/pexels-tomfisk-5424854.jpg"
               alt="Organic waste management background"
               fill
               priority
-              className="object-cover object-center brightness-[0.4] contrast-[1.05]"
+              className="object-cover object-center brightness-[0.75] contrast-[1.05] opacity-90"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/85 to-slate-900/75 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/50 to-slate-900/30" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
           </div>
 
           <div className="orbit-container relative z-10 grid min-h-[82vh] gap-10 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
               <Badge tone="amber">JA WE Challenge 2026 Competition Prototype</Badge>
-              <h1 className="mt-5 max-w-4xl text-5xl font-bold tracking-normal text-white drop-shadow-md md:text-7xl">
+              <h1 className="mt-5 max-w-4xl text-5xl font-bold tracking-normal text-white drop-shadow-lg md:text-7xl">
                 Turning cleaner school waste into <span className="text-[#00C972]">traceable community energy.</span>
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200 font-medium">
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-100 font-medium drop-shadow">
                 ORBIT is a digital coordination and traceability system connecting schools with community waste-to-energy operators, turning verified organic waste contributions into measurable and traceable energy returns.
               </p>
-              <div className="mt-5 rounded-lg border border-amber-300/40 bg-amber-950/60 p-4 text-sm text-amber-200 font-semibold shadow-lg backdrop-blur-md">
+              <div className="mt-5 rounded-xl border border-amber-300/40 bg-slate-950/65 p-4 text-sm text-amber-200 font-semibold shadow-xl backdrop-blur-md">
                 🛡️ No verified source identity = No source-specific energy allocation. Persistent reusable QR containers bridge physical waste flow directly with ORBIT bioenergy accounting.
               </div>
               <div className="mt-8 flex flex-wrap gap-3">
-                <LinkButton href="/transparency" className="bg-[var(--orbit-primary)] text-white hover:bg-[var(--orbit-primary-dark)] font-bold shadow-md">
+                <LinkButton href="/transparency" className="bg-[#000FC4] text-white hover:bg-[#000FC4]/90 font-bold shadow-lg">
                   Explore Live Impact <ArrowRight size={16} aria-hidden />
                 </LinkButton>
-                <LinkButton href="#how-it-works" variant="secondary" className="border-white/30 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md">
+                <LinkButton href="#how-it-works" variant="secondary" className="border-white/40 bg-white/15 text-white hover:bg-white/25 backdrop-blur-md">
                   See How It Works
                 </LinkButton>
               </div>
             </div>
-            <div className="rounded-xl border border-white/20 bg-white/95 text-slate-900 p-5 shadow-2xl backdrop-blur-md">
+            <div className="rounded-2xl border border-white/40 bg-white/75 text-slate-900 p-6 shadow-2xl backdrop-blur-xl transition-all">
               <SystemFlow />
-              <div className="mt-5 rounded-md border border-[var(--orbit-primary)]/20 bg-[var(--orbit-primary)]/5 p-4 text-sm leading-6 text-slate-900 font-medium">
+              <div className="mt-5 rounded-xl border border-[var(--orbit-primary)]/20 bg-white/80 p-4 text-sm leading-6 text-slate-900 font-semibold shadow-sm backdrop-blur-md">
                 The biodigester is not assumed to be installed at every school. ORBIT coordinates
                 source quality, logistics, partner conversion, verified measurement, and allocation.
               </div>
             </div>
           </div>
+
+          <div className="relative z-10 h-28 bg-gradient-to-b from-transparent via-[var(--background)]/60 to-[var(--background)]" />
         </section>
 
         <section id="overview" className="orbit-container py-16">
@@ -135,7 +138,7 @@ export default async function Home() {
           <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-primary)]">Physical workflow and user workflow stay aligned.</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
             {workflow.map(([title, body], index) => (
-              <Card key={title} className="reveal-on-scroll">
+              <Card key={title} className="reveal-on-scroll bg-white/75 backdrop-blur-lg border border-slate-200/80 shadow-md hover:shadow-xl hover:bg-white/90 transition-all">
                 <p className="text-sm font-bold text-[var(--orbit-primary)]">{String(index + 1).padStart(2, "0")}</p>
                 <h3 className="mt-2 font-bold text-slate-950">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
@@ -144,7 +147,7 @@ export default async function Home() {
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
             {userSteps.map(([title, body]) => (
-              <Card key={title} className="reveal-on-scroll">
+              <Card key={title} className="reveal-on-scroll bg-white/75 backdrop-blur-lg border border-slate-200/80 shadow-md hover:shadow-xl hover:bg-white/90 transition-all">
                 <h3 className="font-bold">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
               </Card>
