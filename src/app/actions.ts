@@ -53,7 +53,7 @@ export async function loginAction(_: unknown, formData: FormData) {
 }
 
 export async function logoutAction() {
-  await signOut({ redirectTo: "/" });
+  await signOut({ redirectTo: "/login" });
 }
 
 export async function createBatchAction(_: unknown, formData: FormData) {

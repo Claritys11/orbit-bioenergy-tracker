@@ -70,14 +70,15 @@ export function Card({
 
 export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: string }) {
   const tones: Record<string, string> = {
-    green: "bg-[var(--orbit-energy)]/12 text-black ring-[var(--orbit-energy)]/35",
-    amber: "bg-[var(--orbit-energy)]/12 text-black ring-[var(--orbit-energy)]/35",
-    red: "bg-red-50 text-red-800 ring-red-200",
-    blue: "bg-[var(--orbit-primary)]/8 text-[var(--orbit-primary)] ring-[var(--orbit-primary)]/20",
-    slate: "bg-slate-100 text-slate-700 ring-slate-200",
+    green: "bg-[#00C972]/20 text-black ring-[#00C972]/50 font-bold",
+    amber: "bg-[#7209B7]/15 text-[#7209B7] ring-[#7209B7]/30 font-semibold",
+    red: "bg-black/10 text-black ring-black/30 font-semibold",
+    blue: "bg-[#000FC4]/10 text-[#000FC4] ring-[#000FC4]/30 font-semibold",
+    purple: "bg-[#7209B7]/15 text-[#7209B7] ring-[#7209B7]/30 font-semibold",
+    slate: "bg-slate-100 text-black ring-slate-300 font-medium",
   };
   return (
-    <span className={cn("inline-flex rounded px-2 py-1 text-xs font-semibold ring-1", tones[tone])}>
+    <span className={cn("inline-flex rounded px-2 py-1 text-xs ring-1", tones[tone])}>
       {children}
     </span>
   );
