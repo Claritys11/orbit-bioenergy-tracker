@@ -11,7 +11,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npx prisma db seed"]
+CMD ["sh", "-c", "npx prisma generate && (i=0; until npx prisma db push --accept-data-loss; do i=$((i+1)); if [ $i -ge 10 ]; then exit 1; fi; echo 'Waiting for database...'; sleep 3; done) && npx prisma db seed"]
 
 FROM base AS builder
 WORKDIR /app

@@ -28,8 +28,8 @@ async function user(name: string, email: string, role: Role, organisationId: str
 }
 
 async function main() {
-  const existingUsers = await prisma.user.count().catch(() => 0);
-  if (existingUsers > 0) {
+  const existingPickups = await prisma.pickupRequest.count().catch(() => 0);
+  if (existingPickups > 0) {
     console.log("Database already initialized with data. Skipping seed to preserve production data.");
     return;
   }
