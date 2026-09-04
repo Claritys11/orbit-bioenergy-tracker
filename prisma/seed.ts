@@ -28,6 +28,12 @@ async function user(name: string, email: string, role: Role, organisationId: str
 }
 
 async function main() {
+  const existingUsers = await prisma.user.count().catch(() => 0);
+  if (existingUsers > 0) {
+    console.log("Database already initialized with data. Skipping seed to preserve production data.");
+    return;
+  }
+
   await prisma.auditLog.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.sensorReading.deleteMany();
