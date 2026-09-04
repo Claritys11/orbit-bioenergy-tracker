@@ -8,7 +8,13 @@ CREATE TYPE "OrganisationType" AS ENUM ('SCHOOL', 'OPERATOR', 'COMMUNITY_PARTNER
 CREATE TYPE "BiodigesterStatus" AS ENUM ('UNVERIFIED', 'NO_BIODIGESTER', 'BIODIGESTER_AVAILABLE', 'PILOT_PARTNER', 'INACTIVE');
 
 -- CreateEnum
-CREATE TYPE "BatchStatus" AS ENUM ('DRAFT', 'READY_FOR_PICKUP', 'PICKUP_SCHEDULED', 'IN_TRANSIT', 'DELIVERED', 'UNDER_INSPECTION', 'ACCEPTED', 'CONDITIONAL', 'REJECTED', 'PROCESSED', 'CLOSED');
+CREATE TYPE "ContainerStatus" AS ENUM ('AVAILABLE', 'READY_FOR_PICKUP', 'SCHEDULED', 'IN_TRANSIT', 'AT_FACILITY', 'EMPTIED', 'REVOKED', 'INACTIVE');
+
+-- CreateEnum
+CREATE TYPE "BatchStatus" AS ENUM ('DRAFT', 'READY_FOR_PICKUP', 'PICKUP_REQUESTED', 'PICKUP_SCHEDULED', 'IN_TRANSIT', 'DELIVERED', 'UNDER_INSPECTION', 'ACCEPTED', 'CONDITIONAL', 'REJECTED', 'PROCESSED', 'CLOSED');
+
+-- CreateEnum
+CREATE TYPE "PickupRequestStatus" AS ENUM ('PENDING_OPERATOR_RESPONSE', 'ACCEPTED', 'REJECTED', 'SCHEDULED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED');
 
 -- CreateEnum
 CREATE TYPE "InspectionDecision" AS ENUM ('ACCEPTED', 'CONDITIONAL', 'REJECTED');
@@ -162,14 +168,38 @@ CREATE TABLE "FeedstockCategory" (
 );
 
 -- CreateTable
+CREATE TABLE "WasteContainer" (
+    "id" TEXT NOT NULL,
+    "containerCode" TEXT NOT NULL,
+    "qrToken" TEXT NOT NULL,
+    "organisationId" TEXT NOT NULL,
+    "sourceId" TEXT NOT NULL,
+    "categoryId" TEXT NOT NULL,
+    "capacityKg" DOUBLE PRECISION DEFAULT 50.0,
+    "status" "ContainerStatus" NOT NULL DEFAULT 'AVAILABLE',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "WasteContainer_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "WasteBatch" (
     "id" TEXT NOT NULL,
     "batchCode" TEXT NOT NULL,
     "qrToken" TEXT NOT NULL,
+    "containerId" TEXT,
     "sourceOrganisationId" TEXT NOT NULL,
     "sourceId" TEXT NOT NULL,
     "categoryId" TEXT NOT NULL,
     "grossWeightKg" DOUBLE PRECISION NOT NULL,
+    "declaredMassKg" DOUBLE PRECISION,
+    "collectedMassKg" DOUBLE PRECISION,
+    "verifiedGrossMassKg" DOUBLE PRECISION,
+    "rejectedMassKg" DOUBLE PRECISION,
+    "acceptedMassKg" DOUBLE PRECISION,
     "collectionTimestamp" TIMESTAMP(3) NOT NULL,
     "responsibleUserId" TEXT NOT NULL,
     "storageStatus" TEXT NOT NULL,
@@ -216,12 +246,33 @@ CREATE TABLE "ContaminationInspection" (
 -- CreateTable
 CREATE TABLE "PickupRequest" (
     "id" TEXT NOT NULL,
-    "batchId" TEXT NOT NULL,
+    "requestCode" TEXT NOT NULL,
+    "schoolOrganisationId" TEXT NOT NULL,
+    "requestedByUserId" TEXT NOT NULL,
     "requestedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "thresholdReason" TEXT NOT NULL,
-    "maxStorageWarning" BOOLEAN NOT NULL DEFAULT false,
+    "proposedPickupStart" TIMESTAMP(3) NOT NULL,
+    "proposedPickupEnd" TIMESTAMP(3) NOT NULL,
+    "status" "PickupRequestStatus" NOT NULL DEFAULT 'PENDING_OPERATOR_RESPONSE',
+    "notes" TEXT,
+    "operatorOrgId" TEXT,
+    "respondedByUserId" TEXT,
+    "respondedAt" TIMESTAMP(3),
+    "rejectionReason" TEXT,
+    "acceptedAt" TIMESTAMP(3),
+    "actualScheduledAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "PickupRequest_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PickupRequestItem" (
+    "id" TEXT NOT NULL,
+    "pickupRequestId" TEXT NOT NULL,
+    "batchId" TEXT NOT NULL,
+
+    CONSTRAINT "PickupRequestItem_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -238,14 +289,14 @@ CREATE TABLE "Vehicle" (
 -- CreateTable
 CREATE TABLE "Pickup" (
     "id" TEXT NOT NULL,
-    "batchId" TEXT NOT NULL,
+    "pickupRequestId" TEXT NOT NULL,
     "vehicleId" TEXT,
     "operatorOrgId" TEXT NOT NULL,
     "scheduledAt" TIMESTAMP(3) NOT NULL,
     "completedAt" TIMESTAMP(3),
     "routeNotes" TEXT NOT NULL,
-    "distanceKm" DOUBLE PRECISION NOT NULL,
-    "status" "PickupStatus" NOT NULL,
+    "distanceKm" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "status" "PickupStatus" NOT NULL DEFAULT 'SCHEDULED',
     "failedReason" TEXT,
 
     CONSTRAINT "Pickup_pkey" PRIMARY KEY ("id")
@@ -510,6 +561,18 @@ CREATE UNIQUE INDEX "PartnerFacility_organisationId_key" ON "PartnerFacility"("o
 CREATE UNIQUE INDEX "FeedstockCategory_name_key" ON "FeedstockCategory"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "WasteContainer_containerCode_key" ON "WasteContainer"("containerCode");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "WasteContainer_qrToken_key" ON "WasteContainer"("qrToken");
+
+-- CreateIndex
+CREATE INDEX "WasteContainer_organisationId_status_idx" ON "WasteContainer"("organisationId", "status");
+
+-- CreateIndex
+CREATE INDEX "WasteContainer_qrToken_idx" ON "WasteContainer"("qrToken");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "WasteBatch_batchCode_key" ON "WasteBatch"("batchCode");
 
 -- CreateIndex
@@ -522,16 +585,25 @@ CREATE INDEX "WasteBatch_sourceOrganisationId_status_idx" ON "WasteBatch"("sourc
 CREATE INDEX "WasteBatch_qrToken_idx" ON "WasteBatch"("qrToken");
 
 -- CreateIndex
+CREATE INDEX "WasteBatch_containerId_idx" ON "WasteBatch"("containerId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ContaminationInspection_batchId_key" ON "ContaminationInspection"("batchId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PickupRequest_batchId_key" ON "PickupRequest"("batchId");
+CREATE UNIQUE INDEX "PickupRequest_requestCode_key" ON "PickupRequest"("requestCode");
+
+-- CreateIndex
+CREATE INDEX "PickupRequest_schoolOrganisationId_status_idx" ON "PickupRequest"("schoolOrganisationId", "status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PickupRequestItem_batchId_key" ON "PickupRequestItem"("batchId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Vehicle_plate_key" ON "Vehicle"("plate");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Pickup_batchId_key" ON "Pickup"("batchId");
+CREATE UNIQUE INDEX "Pickup_pickupRequestId_key" ON "Pickup"("pickupRequestId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ConversionCycle_cycleCode_key" ON "ConversionCycle"("cycleCode");
@@ -588,6 +660,18 @@ ALTER TABLE "PartnerFacility" ADD CONSTRAINT "PartnerFacility_organisationId_fke
 ALTER TABLE "WasteSource" ADD CONSTRAINT "WasteSource_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "Organisation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "WasteContainer" ADD CONSTRAINT "WasteContainer_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "Organisation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WasteContainer" ADD CONSTRAINT "WasteContainer_sourceId_fkey" FOREIGN KEY ("sourceId") REFERENCES "WasteSource"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WasteContainer" ADD CONSTRAINT "WasteContainer_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "FeedstockCategory"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WasteBatch" ADD CONSTRAINT "WasteBatch_containerId_fkey" FOREIGN KEY ("containerId") REFERENCES "WasteContainer"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "WasteBatch" ADD CONSTRAINT "WasteBatch_sourceOrganisationId_fkey" FOREIGN KEY ("sourceOrganisationId") REFERENCES "Organisation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -609,13 +693,25 @@ ALTER TABLE "ContaminationInspection" ADD CONSTRAINT "ContaminationInspection_ba
 ALTER TABLE "ContaminationInspection" ADD CONSTRAINT "ContaminationInspection_inspectorId_fkey" FOREIGN KEY ("inspectorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PickupRequest" ADD CONSTRAINT "PickupRequest_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "WasteBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PickupRequest" ADD CONSTRAINT "PickupRequest_schoolOrganisationId_fkey" FOREIGN KEY ("schoolOrganisationId") REFERENCES "Organisation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PickupRequest" ADD CONSTRAINT "PickupRequest_requestedByUserId_fkey" FOREIGN KEY ("requestedByUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PickupRequest" ADD CONSTRAINT "PickupRequest_respondedByUserId_fkey" FOREIGN KEY ("respondedByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PickupRequestItem" ADD CONSTRAINT "PickupRequestItem_pickupRequestId_fkey" FOREIGN KEY ("pickupRequestId") REFERENCES "PickupRequest"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PickupRequestItem" ADD CONSTRAINT "PickupRequestItem_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "WasteBatch"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Vehicle" ADD CONSTRAINT "Vehicle_facilityId_fkey" FOREIGN KEY ("facilityId") REFERENCES "PartnerFacility"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Pickup" ADD CONSTRAINT "Pickup_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "WasteBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Pickup" ADD CONSTRAINT "Pickup_pickupRequestId_fkey" FOREIGN KEY ("pickupRequestId") REFERENCES "PickupRequest"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Pickup" ADD CONSTRAINT "Pickup_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -664,3 +760,4 @@ ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_organisationId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

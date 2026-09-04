@@ -1,4 +1,5 @@
 FROM public.ecr.aws/docker/library/node:22-alpine AS base
+RUN apk add --no-cache openssl
 
 FROM base AS deps
 WORKDIR /app
