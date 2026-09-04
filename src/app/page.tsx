@@ -6,8 +6,8 @@ import { PublicHeader } from "@/components/public/public-header";
 import { PublicMetric } from "@/components/public/public-metric";
 import { PurityCalculator } from "@/components/public/purity-calculator";
 import { SystemFlow } from "@/components/public/system-flow";
-import { LiquidGlassCard } from "@/components/ui/glass-cards";
-import { Badge, Card, LinkButton } from "@/components/ui";
+import { LiquidGlassCard } from "@/components/glass-cards";
+import { Card, LinkButton } from "@/components/ui";
 import { getPublicImpactData } from "@/lib/public-data";
 import { formatGas, formatKg } from "@/lib/utils";
 
