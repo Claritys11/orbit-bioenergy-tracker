@@ -34,6 +34,8 @@ services:
         condition: service_completed_successfully
     expose:
       - "3115"
+    ports:
+      - "3115:3115"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3115/login >/dev/null || exit 1"]
       interval: 30s
