@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
+import { hash } from "bcryptjs";
 import { signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/db";
 import { calculateAllocations, calculateContribution } from "@/lib/domain/allocation";
@@ -54,6 +55,70 @@ export async function loginAction(_: unknown, formData: FormData) {
 
 export async function logoutAction() {
   await signOut({ redirectTo: "/login" });
+}
+
+export async function createPartnerAction(_: unknown, formData: FormData) {
+  const actor = await requireUser("manage_org");
+  const orgName = String(formData.get("organisationName") ?? "").trim();
+  const orgType = String(formData.get("organisationType") ?? "").trim();
+  const userName = String(formData.get("userName") ?? "").trim();
+  const email = String(formData.get("email") ?? "").toLowerCase().trim();
+  const password = String(formData.get("password") ?? "").trim();
+  const role = String(formData.get("role") ?? "").trim() as Role;
+
+  if (!orgName || !orgType || !userName || !email || !password || !role) {
+    return { error: "All fields are required." };
+  }
+
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    return { error: "A user with this email address already exists." };
+  }
+
+  const slug = orgName.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replaceAll(/(^-|-$)/g, "");
+
+  const org = await prisma.organisation.create({
+    data: {
+      name: orgName,
+      slug: slug || `org-${Date.now()}`,
+      type: orgType as "SCHOOL" | "COMMUNITY_PARTNER" | "OPERATOR" | "SUPPORTING_CONTRIBUTOR",
+      school: orgType === "SCHOOL" ? { create: { educationLevel: "General Secondary", studentCount: 500 } } : undefined,
+      facility: orgType === "OPERATOR" || orgType === "COMMUNITY_PARTNER" ? { create: { facilityType: orgType === "OPERATOR" ? "Organics Logistics Hub" : "Community Biogas Facility", capacityKgPerDay: 500, energyMode: "LOW_PRESSURE_GAS_BAG", biodigesterStatus: orgType === "COMMUNITY_PARTNER" ? "PILOT_PARTNER" : "BIODIGESTER_AVAILABLE" } } : undefined,
+      contributor: orgType === "SUPPORTING_CONTRIBUTOR" ? { create: { contributorType: "Vendor Partner", contactName: userName } } : undefined,
+      sources: { create: { name: `${orgName} Sorting Bay`, sourceType: orgType } },
+    },
+  });
+
+  const passwordHash = await hash(password, 12);
+  await prisma.user.create({
+    data: {
+      name: userName,
+      email,
+      role,
+      passwordHash,
+      memberships: {
+        create: {
+          organisationId: org.id,
+          role,
+        },
+      },
+    },
+  });
+
+  await audit({
+    actorId: actor.id,
+    organisationId: org.id,
+    action: "ORGANISATION_CREATED",
+    entityType: "Organisation",
+    entityId: org.id,
+    after: { name: orgName, type: orgType, userEmail: email, role },
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/partners");
+  revalidatePath("/");
+
+  return { success: true, message: `Partner ${orgName} and user ${userName} created successfully.` };
 }
 
 export async function createBatchAction(_: unknown, formData: FormData) {

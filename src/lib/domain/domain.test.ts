@@ -158,9 +158,15 @@ describe("allocation engine", () => {
 });
 
 describe("permissions", () => {
-  it("prevents students from editing operator inspections", () => {
-    expect(can("STUDENT", "inspect_batch")).toBe(false);
-    expect(can("OPERATOR", "inspect_batch")).toBe(true);
+  it("restricts operator to pickups and assigns processing to community partner", () => {
+    expect(can("OPERATOR", "schedule_pickup")).toBe(true);
+    expect(can("OPERATOR", "inspect_batch")).toBe(false);
+    expect(can("OPERATOR", "record_conversion")).toBe(false);
+
+    expect(can("COMMUNITY_PARTNER", "inspect_batch")).toBe(true);
+    expect(can("COMMUNITY_PARTNER", "record_conversion")).toBe(true);
+    expect(can("COMMUNITY_PARTNER", "calculate_allocation")).toBe(true);
+    expect(can("COMMUNITY_PARTNER", "fulfil_allocation")).toBe(true);
   });
 
   it("allows only SUPER_ADMIN to manage containers and issue QR", () => {

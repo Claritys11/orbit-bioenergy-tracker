@@ -32,14 +32,16 @@ const rolePermissions: Record<Role, Permission[]> = {
   STUDENT: ["view_student"],
   OPERATOR: [
     "schedule_pickup",
+    "view_reports",
+  ],
+  COMMUNITY_PARTNER: [
     "inspect_batch",
     "record_conversion",
     "calculate_allocation",
     "fulfil_allocation",
-    "view_reports",
     "manage_safety",
+    "view_reports",
   ],
-  COMMUNITY_PARTNER: ["view_reports"],
 };
 
 export function can(role: Role, permission: Permission) {

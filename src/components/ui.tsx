@@ -92,6 +92,7 @@ export function Field({
   defaultValue,
   step,
   min,
+  placeholder,
 }: {
   label: string;
   name: string;
@@ -100,6 +101,7 @@ export function Field({
   defaultValue?: string | number;
   step?: string;
   min?: string;
+  placeholder?: string;
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-medium text-slate-800">
@@ -111,6 +113,7 @@ export function Field({
         defaultValue={defaultValue}
         step={step}
         min={min}
+        placeholder={placeholder}
         className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm"
       />
     </label>

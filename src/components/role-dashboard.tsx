@@ -35,12 +35,12 @@ const roleCopy = {
     "Waste journey, sorting accuracy, contamination reduction, class learning, and school impact without gas-equipment instructions.",
   ],
   OPERATOR: [
-    "Operator Dashboard",
-    "Incoming feedstock, pickup schedule, inspections, conversion cycles, verified gas, fulfilment, maintenance, and safety alerts.",
+    "Logistics Operator Dashboard",
+    "Organics pickup routes, vehicle fleet schedule, and QR-tagged container collection monitoring.",
   ],
   COMMUNITY_PARTNER: [
-    "Community Partner Dashboard",
-    "Community allocation, energy use, fulfilment history, and local benefit.",
+    "Community Biogas Hub Dashboard",
+    "Feedstock quality inspection, conversion cycles, verified biogas measurement, allocation fulfilment, and digester safety.",
   ],
 } as const;
 
@@ -64,14 +64,15 @@ const nextActions: Record<Role, Array<{ label: string; href: string; permission?
     { label: "View public impact", href: "/impact" },
   ],
   OPERATOR: [
-    { label: "Schedule pickup", href: "/operations/pickups", permission: "schedule_pickup" },
-    { label: "Inspect delivered batch", href: "/operations/inspections", permission: "inspect_batch" },
-    { label: "Record verified gas", href: "/operations/conversions", permission: "record_conversion" },
+    { label: "Schedule pickup route", href: "/operations/pickups", permission: "schedule_pickup" },
+    { label: "Scan QR Container", href: "/scan" },
+    { label: "Pickup & logistics report", href: "/reports/impact", permission: "view_reports" },
   ],
   COMMUNITY_PARTNER: [
-    { label: "Open impact report", href: "/reports/impact", permission: "view_reports" },
-    { label: "Open sustainability report", href: "/reports/sustainability", permission: "view_reports" },
-    { label: "Trace a batch", href: "/scan" },
+    { label: "Quality & contamination inspection", href: "/operations/inspections", permission: "inspect_batch" },
+    { label: "Record conversion cycle & gas", href: "/operations/conversions", permission: "record_conversion" },
+    { label: "Calculate energy allocation", href: "/operations/allocations", permission: "calculate_allocation" },
+    { label: "Fulfil energy allocation", href: "/operations/fulfilment", permission: "fulfil_allocation" },
   ],
 };
 
