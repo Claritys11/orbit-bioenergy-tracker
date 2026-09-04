@@ -19,22 +19,23 @@ School / Market Canteen
 Waste Batch Submitted (1-Scan Canteen UX)
       │
       ▼
-Operator Pickup & Transit
+Operator Pickup & Transit (Logistics & Fleet Collection)
       │
       ▼
-TPS3R Facility Inspection & Bin Emptying (Container freed: EMPTIED → AVAILABLE)
+Community Partner Facility Inspection & Bin Emptying (Container freed: EMPTIED → AVAILABLE)
       │
       ▼
-Biodigester Conversion Cycle
+Community Partner Conversion Cycle & Verified Biogas Production
       │
       ▼
-Verified Biogas Production
+Purity-to-Power Energy Allocation & Fulfilment
 
 
 DIGITAL WORLD (ORBIT Engine)
 
   • Identity & QR Resolver (/c/[qrToken])
   • Chain of Custody Mass Tracking (declared → collected → verified → accepted)
+  • Superadmin Partner Onboarding & Auto-Sync (/admin/users → /partners)
   • Purity-to-Power Allocation Engine (50% Schools / 30% Operator / 20% Contributors)
   • Auditable Supply Chain Journey Timeline
   • Public Transparency Layer & Energy Return Accounting
@@ -46,7 +47,8 @@ DIGITAL WORLD (ORBIT Engine)
 2. **1 Active Batch per Container**: Enforced at the database and UI levels to prevent impossible physical duplicates. A container can only create a new batch after the current batch is inspected and emptied at the facility.
 3. **Immediate Container Return to Service**: Containers return to `AVAILABLE` immediately upon facility receipt and inspection, freeing the bin for canteen reuse without waiting for multi-week anaerobic digestion.
 4. **🛡️ No Verified Source Identity = No Source-Specific Energy Allocation**: TPS3R operators may process un-tagged waste, but only verified QR containers allow clean organic contributions to be reliably credited back to participating schools and communities.
-5. **Estimated Gas vs. Verified Gas**: Contribution previews use estimated yield, but energy allocation and fulfilment strictly consume **Verified Gas** recorded post-conversion.
+5. **Superadmin Partner Onboarding**: Superadmins can register new Schools, Community Partners, Waste Operators, and Supporting Contributors; new partners dynamically update on the public `/partners` showcase.
+6. **Estimated Gas vs. Verified Gas**: Contribution previews use estimated yield, but energy allocation and fulfilment strictly consume **Verified Gas** recorded post-conversion.
 
 ---
 
@@ -55,7 +57,8 @@ DIGITAL WORLD (ORBIT Engine)
 | Stakeholder | Role in Supply Chain | Incentives & Returns |
 | :--- | :--- | :--- |
 | **School / Canteen** | Source separation & container registration | Verified energy credits, LPG savings, and public sustainability impact |
-| **TPS3R Operator** | Logistical collection, inspection & biodigestion | Reliable feedstock supply, higher capacity utilization, processing fee & digestate fertilizer |
+| **TPS3R Operator** | Logistical collection, fleet routes & container pickup | Reliable route scheduling, container tracking & logistics efficiency |
+| **Community Partner** | Quality inspection, biodigester conversion & gas allocation | Clean energy conversion, digestate fertilizer & local community impact |
 | **Supporting Contributor** | Market/vendor feedstock stabilization | Organic waste disposal & supporting pool energy allocation |
 | **ORBIT Platform** | Digital coordination, accounting & audit logs | Small platform maintenance fee (5% pilot default) |
 
@@ -110,12 +113,12 @@ All demo accounts use the password: **`OrbitDemo2026!`**
 
 | Role | Email | Scope & Wewenang Utama |
 | :--- | :--- | :--- |
-| `SUPER_ADMIN` | `super@orbit.test` | QR container issuance (`/admin/containers`), system settings, global audit logs, allocation configuration |
+| `SUPER_ADMIN` | `super@orbit.test` | QR container issuance (`/admin/containers`), partner organisation & user registration (`/admin/users`), system settings, global audit logs, allocation configuration |
 | `SCHOOL_ADMIN` | `school@orbit.test` | School profile, container overview, batch history, school impact reports |
 | `CANTEEN_STAFF` | `canteen@orbit.test` | 1-scan container batch registration (`/c/[qrToken]`), pickup monitoring |
 | `STUDENT` | `student@orbit.test` | Public-safe traceability, educational impact, sorting feedback |
-| `OPERATOR` | `operator@orbit.test` | Pickup scheduling, quality inspection, conversion cycles, verified gas, fulfilment |
-| `COMMUNITY_PARTNER` | `community@orbit.test` | Community allocation reports, facility performance visibility |
+| `OPERATOR` | `operator@orbit.test` | Organic waste pickup scheduling, QR container collection, fleet transit & logistics monitoring |
+| `COMMUNITY_PARTNER` | `community@orbit.test` | Waste quality inspection, conversion cycles, verified gas measurement, energy allocation calculation & fulfilment, biodigester safety management |
 
 ---
 
@@ -129,8 +132,8 @@ ORBIT is built as a **Modular Monolith**. Server components query database model
 | `SCHOOL_ADMIN` | `manage_org`, `view_reports`, `view_audit` |
 | `CANTEEN_STAFF` | `create_batch`, `view_reports` |
 | `STUDENT` | `view_student` (Public-safe trace only) |
-| `OPERATOR` | `schedule_pickup`, `inspect_batch`, `record_conversion`, `calculate_allocation`, `fulfil_allocation`, `view_reports`, `manage_safety` |
-| `COMMUNITY_PARTNER` | `view_reports` |
+| `OPERATOR` | `schedule_pickup`, `view_reports` |
+| `COMMUNITY_PARTNER` | `inspect_batch`, `record_conversion`, `calculate_allocation`, `fulfil_allocation`, `manage_safety`, `view_reports` |
 
 ---
 
