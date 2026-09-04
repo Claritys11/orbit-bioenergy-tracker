@@ -114,11 +114,11 @@ All demo accounts use the password: **`OrbitDemo2026!`**
 | Role | Email | Scope & Wewenang Utama |
 | :--- | :--- | :--- |
 | `SUPER_ADMIN` | `super@orbit.test` | QR container issuance (`/admin/containers`), partner organisation & user registration (`/admin/users`), system settings, global audit logs, allocation configuration |
-| `SCHOOL_ADMIN` | `school@orbit.test` | School profile, container overview, batch history, school impact reports |
-| `CANTEEN_STAFF` | `canteen@orbit.test` | 1-scan container batch registration (`/c/[qrToken]`), pickup monitoring |
-| `STUDENT` | `student@orbit.test` | Public-safe traceability, educational impact, sorting feedback |
-| `OPERATOR` | `operator@orbit.test` | Organic waste pickup scheduling, QR container collection, fleet transit & logistics monitoring |
-| `COMMUNITY_PARTNER` | `community@orbit.test` | Waste quality inspection, conversion cycles, verified gas measurement, energy allocation calculation & fulfilment, biodigester safety management |
+| `SCHOOL_ADMIN` | `school@orbit.test` | School container overview, waste batch history, multi-item pickup request creation (`/operations/pickups`), pickup progress monitoring, energy credit & impact reports |
+| `CANTEEN_STAFF` | `canteen@orbit.test` | Mobile 1-scan reusable container load registration (`/c/[qrToken]` or `/batches/new`), declared mass entry, category confirmation, sorting feedback |
+| `STUDENT` | `student@orbit.test` | Educational waste journey trace, sorting accuracy feedback, public school impact reports |
+| `OPERATOR` | `operator@orbit.test` | Incoming pickup request review (Accept/Reject), vehicle fleet route scheduling, collection transit, facility contamination inspection, conversion cycles, verified gas recording, allocation calculation & fulfilment, biodigester safety |
+| `COMMUNITY_PARTNER` | `community@orbit.test` | Read-only monitoring of community allocation pools, local energy benefit, fulfilment status, approved facility performance, and public impact reports |
 
 ---
 
@@ -128,12 +128,12 @@ ORBIT is built as a **Modular Monolith**. Server components query database model
 
 | Role | Main Permissions |
 | :--- | :--- |
-| `SUPER_ADMIN` | `manage_containers`, `issue_qr`, `manage_system`, `manage_org`, `view_reports`, `view_audit`, `calculate_allocation`, `manage_safety` |
-| `SCHOOL_ADMIN` | `manage_org`, `view_reports`, `view_audit` |
-| `CANTEEN_STAFF` | `create_batch`, `view_reports` |
-| `STUDENT` | `view_student` (Public-safe trace only) |
-| `OPERATOR` | `schedule_pickup`, `view_reports` |
-| `COMMUNITY_PARTNER` | `inspect_batch`, `record_conversion`, `calculate_allocation`, `fulfil_allocation`, `manage_safety`, `view_reports` |
+| `SUPER_ADMIN` | `manage_system`, `manage_org`, `manage_containers`, `issue_qr`, `create_waste_record`, `view_batches`, `request_pickup`, `respond_pickup_request`, `manage_pickup_logistics`, `inspect_batch`, `record_conversion`, `calculate_allocation`, `fulfil_allocation`, `view_reports`, `view_audit`, `manage_safety` |
+| `SCHOOL_ADMIN` | `manage_org`, `view_reports`, `view_audit`, `view_batches`, `request_pickup` |
+| `CANTEEN_STAFF` | `create_waste_record`, `create_batch`, `view_batches`, `view_reports` |
+| `STUDENT` | `view_student`, `view_reports` (Public-safe trace only) |
+| `OPERATOR` | `respond_pickup_request`, `manage_pickup_logistics`, `inspect_batch`, `record_conversion`, `calculate_allocation`, `fulfil_allocation`, `manage_safety`, `view_reports`, `view_batches` |
+| `COMMUNITY_PARTNER` | `view_reports` (Read-only monitoring) |
 
 ---
 
