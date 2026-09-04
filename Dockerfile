@@ -13,10 +13,10 @@ CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
 
 FROM base AS builder
 WORKDIR /app
-ARG DATABASE_URL="postgresql://orbit:orbit2026@localhost:55432/orbit"
-ARG AUTH_SECRET="orbit_demo_super_secret_auth_secret_2026_fallback"
-ARG AUTH_URL="http://localhost:3115"
-ARG NEXT_PUBLIC_APP_URL="http://localhost:3115"
+ARG DATABASE_URL
+ARG AUTH_SECRET
+ARG AUTH_URL
+ARG NEXT_PUBLIC_APP_URL
 ENV DATABASE_URL=$DATABASE_URL
 ENV AUTH_SECRET=$AUTH_SECRET
 ENV AUTH_URL=$AUTH_URL
