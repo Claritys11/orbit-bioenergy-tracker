@@ -15,10 +15,10 @@ export function SystemFlow() {
       {nodes.map((node, index) => {
         const Icon = node.icon;
         return (
-          <div key={node.label} className="reveal-on-scroll relative rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div key={node.label} className="reveal-on-scroll relative rounded-xl border border-white/60 bg-white/85 p-4 shadow-sm backdrop-blur-md transition-all hover:bg-white hover:shadow-md">
             <Icon size={22} className="text-[var(--orbit-primary)]" aria-hidden />
             <p className="mt-3 font-bold text-slate-950">{node.label}</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">{node.note}</p>
+            <p className="mt-1 text-xs leading-5 font-semibold text-slate-700">{node.note}</p>
             {index % 2 === 0 ? (
               <ArrowRight
                 className="absolute -right-6 top-1/2 z-10 hidden -translate-y-1/2 text-[var(--orbit-energy)] sm:block"

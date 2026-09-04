@@ -6,6 +6,7 @@ import { PublicHeader } from "@/components/public/public-header";
 import { PublicMetric } from "@/components/public/public-metric";
 import { PurityCalculator } from "@/components/public/purity-calculator";
 import { SystemFlow } from "@/components/public/system-flow";
+import { LiquidGlassCard } from "@/components/ui/glass-cards";
 import { Badge, Card, LinkButton } from "@/components/ui";
 import { getPublicImpactData } from "@/lib/public-data";
 import { formatGas, formatKg } from "@/lib/utils";
@@ -60,14 +61,16 @@ export default async function Home() {
 
           <div className="orbit-container relative z-10 grid min-h-[82vh] gap-10 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <Badge tone="amber">JA WE Challenge 2026 Competition Prototype</Badge>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/20 px-3.5 py-1 text-xs font-bold text-amber-300 shadow-md backdrop-blur-md">
+                JA WE Challenge 2026 Competition Prototype
+              </span>
               <h1 className="mt-5 max-w-4xl text-5xl font-bold tracking-normal text-white drop-shadow-lg md:text-7xl">
                 Turning cleaner school waste into <span className="text-[#00C972]">traceable community energy.</span>
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-100 font-medium drop-shadow">
                 ORBIT is a digital coordination and traceability system connecting schools with community waste-to-energy operators, turning verified organic waste contributions into measurable and traceable energy returns.
               </p>
-              <div className="mt-5 rounded-xl border border-amber-300/40 bg-slate-950/65 p-4 text-sm text-amber-200 font-semibold shadow-xl backdrop-blur-md">
+              <div className="mt-5 rounded-xl border border-amber-400/50 bg-slate-950/80 p-4 text-sm text-amber-100 font-semibold shadow-xl backdrop-blur-md">
                 🛡️ No verified source identity = No source-specific energy allocation. Persistent reusable QR containers bridge physical waste flow directly with ORBIT bioenergy accounting.
               </div>
               <div className="mt-8 flex flex-wrap gap-3">
@@ -79,13 +82,13 @@ export default async function Home() {
                 </LinkButton>
               </div>
             </div>
-            <div className="rounded-2xl border border-white/40 bg-white/75 text-slate-900 p-6 shadow-2xl backdrop-blur-xl transition-all">
+            <LiquidGlassCard>
               <SystemFlow />
-              <div className="mt-5 rounded-xl border border-[var(--orbit-primary)]/20 bg-white/80 p-4 text-sm leading-6 text-slate-900 font-semibold shadow-sm backdrop-blur-md">
+              <div className="mt-5 rounded-xl border border-white bg-white/95 p-4 text-sm leading-6 text-slate-950 font-bold shadow-sm backdrop-blur-md">
                 The biodigester is not assumed to be installed at every school. ORBIT coordinates
                 source quality, logistics, partner conversion, verified measurement, and allocation.
               </div>
-            </div>
+            </LiquidGlassCard>
           </div>
 
           <div className="relative z-10 h-28 bg-gradient-to-b from-transparent via-[var(--background)]/60 to-[var(--background)]" />
