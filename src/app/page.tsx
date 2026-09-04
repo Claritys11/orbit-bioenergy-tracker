@@ -14,23 +14,21 @@ import { formatGas, formatKg } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 const workflow = [
-  ["Issue Reusable Container", "Super Admin issues persistent digital identity tags (e.g. CNT-TELKOM-001) attached to physical reusable waste drums."],
-  ["Mark Container Ready", "Canteen team marks assigned reusable container ready for school pickup in 1 click. Official weighing is deferred to the facility."],
-  ["Request School Pickup", "School Admin reviews ready containers and dispatches pickup requests to the logistics operator."],
-  ["Logistics Collection", "Logistics Operator accepts demand, schedules route, assigns vehicles, and safely transports containers to the facility."],
-  ["Facility Scale & Inspection", "Community Facility staff receive containers, weigh gross mass on calibrated scales, and inspect contamination."],
-  ["Biodigester Conversion", "Accepted organic feedstock enters the anaerobic biodigester and certified gas flow meter readings are verified."],
-  ["Automated Allocation", "ORBIT allocates energy credit using verified allocatable gas (50% schools / 30% facility O&M / 20% contributors)."],
-  ["Clean Fuel Fulfilment", "Energy fulfilment and public-safe sustainability impact are delivered and verified transparently."],
+  ["Tag Container", "Super Admin issues persistent digital identity tags (e.g. CNT-TELKOM-001-01) attached to physical reusable waste bins."],
+  ["Register Batch", "Canteen staff scan the reusable container QR and submit declared organic waste weight."],
+  ["Schedule & Transit", "ORBIT schedules operator pickup and tracks container transport to the TPS3R facility."],
+  ["Inspect & Empty", "Operators inspect contamination rate and empty the container at the facility, immediately returning the bin to AVAILABLE status."],
+  ["Biodigester Conversion", "Accepted organic feedstock enters the biodigester for anaerobic digestion."],
+  ["Record Verified Gas", "Facility records actual measured biogas output post-conversion."],
+  ["Purity-to-Power Allocation", "ORBIT allocates energy credit using verified allocatable gas (50% schools / 30% operator / 20% contributors)."],
+  ["Energy Return & Impact", "Energy fulfilment and public-safe sustainability impact are reported transparently."],
 ];
 
 const userSteps = [
-  ["Canteen Staff", "Sign in, select assigned reusable drum, mark ready in 1 click, and monitor diverted organics."],
-  ["School Admin", "Review ready canteen waste, dispatch collection requests, monitor pickup progress, and track school clean energy credits."],
-  ["Logistics Operator", "Review incoming pickup demand, schedule routes, assign vehicles, track transit, and confirm facility delivery."],
-  ["Community Facility", "Receive delivered containers, perform calibrated weighing & contamination sorting, log measured physical biogas, and fulfil energy."],
-  ["Student Observer", "Follow the waste journey, learn sorting cleanliness feedback, and explore public-safe regional impact."],
-  ["Public Visitor", "Open Live Impact, inspect public organisations, audit aggregate batch traces, and verify calculation methodology."],
+  ["School/Canteen", "Sign in, create a batch, enter category and weight, generate QR, prepare for pickup, monitor inspection, and view allocation."],
+  ["Operator", "View incoming batches, schedule pickup, inspect contamination, create conversion cycles, record verified gas, confirm allocation, and record fulfilment."],
+  ["Public Visitor", "Open Live Impact, inspect public organisations, trace a batch, read methodology, and verify sources."],
+  ["Student", "Follow the waste journey, learn contamination feedback, and understand impact without handling gas equipment."],
 ];
 
 const partnerCards = [
@@ -66,7 +64,7 @@ export default async function Home() {
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/20 px-3.5 py-1 text-xs font-bold text-amber-300 shadow-md backdrop-blur-md">
                 JA WE Challenge 2026 Competition Prototype
               </span>
-              <h1 className="mt-5 max-w-4xl text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white drop-shadow-lg">
+              <h1 className="mt-5 max-w-4xl text-5xl font-bold tracking-normal text-white drop-shadow-lg md:text-7xl">
                 Turning cleaner school waste into <span className="text-[#00C972]">traceable community energy.</span>
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-100 font-medium drop-shadow">

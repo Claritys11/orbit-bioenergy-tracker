@@ -12,7 +12,7 @@ export function formatKg(value: number | null | undefined, fallback = "Pending v
 
 export function formatGas(value: number | null | undefined, fallback = "Pending verification") {
   if (value === null || value === undefined) return fallback;
-  return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} m³`;
+  return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} m3`;
 }
 
 export function humanise(value: string) {

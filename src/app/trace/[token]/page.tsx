@@ -1,7 +1,7 @@
+import { ConfidenceBadge } from "@/components/public/confidence";
 import { PublicFooter } from "@/components/public/public-footer";
 import { PublicHeader } from "@/components/public/public-header";
-import { Card, DataConfidenceBadge, LinkButton, StatusBadge } from "@/components/ui";
-import { WasteJourneyTracker } from "@/components/waste-journey-tracker";
+import { Badge, Card, LinkButton } from "@/components/ui";
 import { prisma } from "@/lib/db";
 import { formatGas, formatKg, humanise } from "@/lib/utils";
 
@@ -18,13 +18,12 @@ export default async function TracePage({ params }: { params: Promise<{ token: s
       },
     },
   };
-
   const batch =
     token === "demo"
       ? await prisma.wasteBatch.findFirst({ include })
       : await prisma.wasteBatch.findUnique({ where: { qrToken: token }, include });
-
   const timeline = Array.isArray(batch?.activityTimeline) ? batch.activityTimeline : [];
+  const score = batch?.contributionScores[0];
   const cycle = batch?.conversionBatches[0]?.cycle;
   const allocated = cycle?.allocations.reduce((sum, allocation) => sum + allocation.allocatedGasM3, 0) ?? 0;
   const fulfilled =
@@ -37,146 +36,59 @@ export default async function TracePage({ params }: { params: Promise<{ token: s
   return (
     <>
       <PublicHeader />
-      <main id="main" className="orbit-container py-10 space-y-6">
-        {batch ? (
-          <>
-            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--orbit-primary)]">
-                  SAFE PUBLIC SUPPLY CHAIN TRACE
-                </span>
-                <h1 className="mt-1 text-3xl sm:text-4xl font-black text-slate-950">
-                  Batch {batch.batchCode}
-                </h1>
-                <p className="mt-1 text-xs sm:text-sm text-slate-600 max-w-2xl">
-                  Public trace aggregate for community auditability. Personal identifiers, driver routes, and private facility operations are omitted.
-                </p>
-              </div>
-              <DataConfidenceBadge
-                level={cycle ? "VERIFIED_BIOGAS" : batch.inspection ? "MEASURED" : "UNVERIFIED"}
-              />
+      <main id="main" className="mx-auto grid min-h-[70vh] max-w-4xl px-4 py-10">
+        <Card>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--orbit-primary)]">Safe ORBIT Trace</p>
+              {batch ? <h1 className="mt-2 text-4xl font-bold text-slate-950">{batch.batchCode}</h1> : null}
             </div>
-
-            {/* Signature Waste to Energy Journey Component */}
-            <WasteJourneyTracker
-              currentStage={batch.status}
-              batchCode={batch.batchCode}
-              metrics={{
-                declaredKg: batch.declaredMassKg,
-                verifiedGrossKg: batch.inspection?.verifiedGrossMassKg,
-                acceptedMassKg: batch.inspection?.acceptedMassKg,
-                estimatedGasM3: batch.inspection ? batch.inspection.acceptedMassKg * batch.category.yieldFactor : null,
-                verifiedGasM3: cycle?.verifiedGasM3,
-              }}
-            />
-
-            <div className="grid gap-6 md:grid-cols-[1fr_320px]">
-              <div className="space-y-6">
-                <Card>
-                  <h2 className="text-base font-bold text-slate-950 mb-4 border-b border-slate-100 pb-2.5">
-                    Supply Chain Evidence & Metrics
-                  </h2>
-                  <div className="grid gap-4 sm:grid-cols-3 text-xs">
-                    <div>
-                      <p className="text-slate-500">Source Contributor</p>
-                      <p className="font-bold text-slate-900 mt-0.5">{batch.sourceOrganisation.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Lifecycle Status</p>
-                      <div className="mt-0.5"><StatusBadge status={batch.status} /></div>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Feedstock Type</p>
-                      <p className="font-bold text-slate-900 mt-0.5">{batch.category.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Verified Gross Mass</p>
-                      <p className="font-bold text-slate-900 mt-0.5">{formatKg(batch.grossWeightKg)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Accepted Organics</p>
-                      <p className="font-bold text-emerald-800 mt-0.5">
-                        {batch.inspection ? formatKg(batch.inspection.acceptedMassKg) : "Pending weighing"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Contamination Rate</p>
-                      <p className="font-bold text-slate-900 mt-0.5">
-                        {batch.inspection ? `${batch.inspection.contaminationRate}%` : "Pending inspection"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Verified Biogas Output</p>
-                      <p className="font-bold text-[var(--orbit-primary)] mt-0.5">
-                        {cycle ? formatGas(cycle.verifiedGasM3) : "Pending conversion"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Allocated Credit</p>
-                      <p className="font-bold text-slate-900 mt-0.5">{formatGas(allocated)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Fulfilled Energy</p>
-                      <p className="font-bold text-emerald-800 mt-0.5">
-                        {fulfilled > 0 ? formatGas(fulfilled) : "Awaiting distribution"}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Public Activity Timeline */}
-                <Card>
-                  <h2 className="text-base font-bold text-slate-950 mb-3 border-b border-slate-100 pb-2.5">
-                    Verified Public Timeline
-                  </h2>
-                  <ol className="space-y-3">
-                    {timeline.map((item, index) => {
-                      const entry = item as { status?: string; at?: string };
-                      return (
-                        <li key={`${entry.status}-${index}`} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3 text-xs flex items-center justify-between">
-                          <span className="font-bold text-slate-900">
-                            {entry.status ? humanise(entry.status) : "Supply Chain Checkpoint"}
-                          </span>
-                          <span className="text-slate-500 text-[11px]">
-                            {entry.at ? new Date(entry.at).toLocaleDateString("id-ID", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Recorded"}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </Card>
+            <ConfidenceBadge value="Simulated Demo" />
+          </div>
+          {batch ? (
+            <>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Public trace excludes personal names, email addresses, private photos, exact routes,
+                vehicle identifiers, raw safety details, and private audit diffs.
+              </p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <div><p className="text-sm text-slate-500">Source organisation</p><p className="font-bold">{batch.sourceOrganisation.name}</p></div>
+                <div><p className="text-sm text-slate-500">Status</p><Badge tone={batch.status === "REJECTED" ? "red" : "green"}>{humanise(batch.status)}</Badge></div>
+                <div><p className="text-sm text-slate-500">Feedstock</p><p className="font-bold">{batch.category.name}</p></div>
+                <div><p className="text-sm text-slate-500">Gross mass</p><p className="font-bold">{formatKg(batch.grossWeightKg)}</p></div>
+                <div><p className="text-sm text-slate-500">Accepted mass</p><p className="font-bold">{batch.inspection ? formatKg(batch.inspection.acceptedMassKg) : "Pending validation"}</p></div>
+                <div><p className="text-sm text-slate-500">Contamination</p><p className="font-bold">{batch.inspection ? `${batch.inspection.contaminationRate}%` : "Pending"}</p></div>
+                <div><p className="text-sm text-slate-500">Estimated contribution</p><p className="font-bold">{score ? score.contributionScore.toFixed(4) : "Pending"}</p></div>
+                <div><p className="text-sm text-slate-500">Conversion cycle</p><p className="font-bold">{cycle?.cycleCode ?? "Not processed"}</p></div>
+                <div><p className="text-sm text-slate-500">Verified gas in cycle</p><p className="font-bold">{cycle ? formatGas(cycle.verifiedGasM3) : "Pending"}</p></div>
+                <div><p className="text-sm text-slate-500">Allocation status</p><p className="font-bold">{allocated ? formatGas(allocated) : "Pending"}</p></div>
+                <div><p className="text-sm text-slate-500">Fulfilment status</p><p className="font-bold">{fulfilled ? `${formatGas(fulfilled)} fulfilled` : "Not delivered yet"}</p></div>
+                <div><p className="text-sm text-slate-500">Data classification</p><p className="font-bold">Public-safe aggregate trace</p></div>
               </div>
-
-              {/* Sidebar Info */}
-              <div className="space-y-4">
-                <Card>
-                  <h3 className="text-sm font-bold text-slate-950">Data Trust Architecture</h3>
-                  <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                    ORBIT enforces strict mathematical distinction between theoretical estimates and physically measured gas yields.
-                  </p>
-                  <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
-                    <LinkButton href="/transparency" variant="secondary" className="w-full text-xs">
-                      Transparency Dashboard
-                    </LinkButton>
-                    <LinkButton href="/partners" variant="secondary" className="w-full text-xs">
-                      Partner Directory
-                    </LinkButton>
-                  </div>
-                </Card>
+              <div className="mt-6 rounded-md bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                Estimated gas is not presented as measured output. Verified gas appears only after an operator conversion record exists.
               </div>
-            </div>
-          </>
-        ) : (
-          <Card className="max-w-md mx-auto text-center p-8">
-            <h1 className="text-2xl font-bold text-slate-950">Trace Not Found</h1>
-            <p className="mt-2 text-xs text-slate-600">
-              The requested QR code or batch identifier does not match an active public record.
-            </p>
-            <div className="mt-6">
-              <LinkButton href="/transparency">Open Transparency Feed</LinkButton>
-            </div>
-          </Card>
-        )}
+              <h2 className="mt-8 text-lg font-bold">Public timeline</h2>
+              <ol className="mt-3 grid gap-3">
+                {timeline.map((item, index) => {
+                  const entry = item as { status?: string; at?: string };
+                  return (
+                    <li key={`${entry.status}-${index}`} className="rounded-md border border-slate-200 p-3">
+                      <p className="font-semibold">{entry.status ? humanise(entry.status) : "Activity"}</p>
+                      <p className="text-sm text-slate-500">{entry.at ?? "Timestamp pending"}</p>
+                    </li>
+                  );
+                })}
+              </ol>
+            </>
+          ) : (
+            <>
+              <h1 className="mt-2 text-3xl font-bold text-slate-950">Trace not found</h1>
+              <p className="mt-2 text-sm text-slate-600">The QR identifier is unknown or no longer valid.</p>
+            </>
+          )}
+          <LinkButton href="/transparency" variant="secondary" className="mt-6">Open transparency dashboard</LinkButton>
+        </Card>
       </main>
       <PublicFooter />
     </>

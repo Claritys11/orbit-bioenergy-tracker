@@ -8,15 +8,7 @@ export default async function SettingsPage() {
   const config = await prisma.allocationConfiguration.findFirst({ where: { active: true } });
   return (
     <div className="grid gap-6">
-      <PageHeader
-        title="System Settings"
-        description="Configuration changes are versioned and audited. Demo thresholds are labelled prototype assumptions."
-        breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "System Admin" },
-          { label: "System Settings" },
-        ]}
-      />
+      <PageHeader title="System Settings" description="Configuration changes are versioned and audited. Demo thresholds are labelled prototype assumptions." />
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
           <h2 className="text-lg font-bold">Active allocation configuration</h2>

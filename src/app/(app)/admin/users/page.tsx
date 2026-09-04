@@ -14,11 +14,6 @@ export default async function UsersPage() {
       <PageHeader
         title="Organisations & Users"
         description="Register newly partnered schools, community biogas hubs, and user accounts. Active partnerships automatically sync to public pages."
-        breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "System Admin" },
-          { label: "Organisations & Users" },
-        ]}
       />
       <AddPartnerForm />
       <div className="grid gap-4">

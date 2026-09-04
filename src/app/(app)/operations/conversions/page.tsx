@@ -45,19 +45,12 @@ export default async function ConversionsPage() {
     <div className="grid gap-6">
       <PageHeader
         title="Biodigester Conversion Cycles"
-        description="Anaerobic digestion: record verified organic feedstock entering the reactor and log certified physical gas meter readings. ORBIT automatically generates 50/30/20 energy credit allocations."
-        breadcrumbs={[
-          { label: "Overview", href: "/dashboard" },
-          { label: "Conversions" },
-        ]}
+        description="Record verified organic feedstock entering the anaerobic biodigester and verify physical gas output. ORBIT automatically computes school energy allocations."
       />
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <Card>
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="text-base font-bold text-slate-950">Record Conversion Cycle</h2>
-              <p className="text-xs text-slate-500">Physical biodigester run & certified flow meter verification</p>
-            </div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold">Start Conversion Cycle</h2>
             <Badge tone="green">Community Facility</Badge>
           </div>
           <ConversionForm

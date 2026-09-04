@@ -42,36 +42,12 @@ export default async function ConversionDetailPage({ params }: { params: Promise
   });
   return (
     <div className="grid gap-6">
-      <PageHeader
-        title={cycle.cycleCode}
-        description="Conversion detail with physical flow meter verification, computed contribution scores, and automated 50/30/20 energy credit distribution."
-        breadcrumbs={[
-          { label: "Overview", href: "/dashboard" },
-          { label: "Conversions", href: "/operations/conversions" },
-          { label: cycle.cycleCode },
-        ]}
-      />
+      <PageHeader title={cycle.cycleCode} description="Conversion detail with measured gas, estimated contribution scores, and allocation simulation before finalisation." />
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Verified Biogas</p>
-          <p className="mt-1 text-2xl font-black text-slate-950">{formatGas(cycle.verifiedGasM3)}</p>
-          <p className="text-[11px] text-emerald-700 mt-1">Certified flow meter log</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Operational Use</p>
-          <p className="mt-1 text-2xl font-black text-slate-950">{formatGas(cycle.operationalUseM3)}</p>
-          <p className="text-[11px] text-slate-500 mt-1">Facility burner support</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Safety Reserve</p>
-          <p className="mt-1 text-2xl font-black text-slate-950">{formatGas(cycle.safetyReserveM3)}</p>
-          <p className="text-[11px] text-slate-500 mt-1">Pressure buffer reserve</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Allocatable Biogas</p>
-          <p className="mt-1 text-2xl font-black text-emerald-800">{formatGas(simulation.allocatableGasM3)}</p>
-          <p className="text-[11px] text-emerald-700 mt-1">Net distributable energy</p>
-        </Card>
+        <Card><p className="text-sm text-slate-500">Verified gas</p><p className="text-2xl font-bold">{formatGas(cycle.verifiedGasM3)}</p></Card>
+        <Card><p className="text-sm text-slate-500">Operational use</p><p className="text-2xl font-bold">{formatGas(cycle.operationalUseM3)}</p></Card>
+        <Card><p className="text-sm text-slate-500">Safety reserve</p><p className="text-2xl font-bold">{formatGas(cycle.safetyReserveM3)}</p></Card>
+        <Card><p className="text-sm text-slate-500">Allocatable</p><p className="text-2xl font-bold">{formatGas(simulation.allocatableGasM3)}</p></Card>
       </div>
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>

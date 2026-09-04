@@ -7,15 +7,7 @@ export default async function FacilitiesPage() {
   const facilities = await prisma.partnerFacility.findMany({ include: { organisation: true, vehicles: true } });
   return (
     <div className="grid gap-6">
-      <PageHeader
-        title="Facility Management"
-        description="TPS3R/KSM capability is explicit. Facilities are not automatically treated as biodigester-ready."
-        breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "System Admin" },
-          { label: "Facility Management" },
-        ]}
-      />
+      <PageHeader title="Facility Management" description="TPS3R/KSM capability is explicit. Facilities are not automatically treated as biodigester-ready." />
       <div className="grid gap-4 md:grid-cols-2">
         {facilities.map((facility) => (
           <Card key={facility.id}>

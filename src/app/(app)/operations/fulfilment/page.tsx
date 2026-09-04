@@ -19,12 +19,8 @@ export default async function FulfilmentPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
-        title="Energy Allocation Fulfilment"
-        description="Delivery tracking: record physical biogas delivery to school kitchens and community hubs across piped, low-pressure gas bag, and on-hub delivery modes."
-        breadcrumbs={[
-          { label: "Overview", href: "/dashboard" },
-          { label: "Energy Fulfilment" },
-        ]}
+        title="Allocation Fulfilment"
+        description="Track pending, scheduled, partially fulfilled, delivered, cancelled, and rolled-over energy allocations without overstating delivery."
       />
       <div className={`grid gap-6 ${canFulfil ? "xl:grid-cols-[0.9fr_1.1fr]" : "grid-cols-1"}`}>
         {canFulfil ? (

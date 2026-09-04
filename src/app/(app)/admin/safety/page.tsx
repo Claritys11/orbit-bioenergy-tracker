@@ -11,15 +11,7 @@ export default async function SafetyPage() {
   ]);
   return (
     <div className="grid gap-6">
-      <PageHeader
-        title="Safety & Maintenance"
-        description="ORBIT monitors alerts and maintenance work. It does not replace certified physical safety equipment or trained adult operators."
-        breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "System Admin" },
-          { label: "Safety & Maintenance" },
-        ]}
-      />
+      <PageHeader title="Safety & Maintenance" description="ORBIT monitors alerts and maintenance work. It does not replace certified physical safety equipment or trained adult operators." />
       <Card className="border-amber-200 bg-amber-50">
         <p className="font-semibold text-amber-950">
           Safety-critical shutdowns must be handled by local hardware and trained adult operators. ORBIT does not replace certified physical safety equipment.

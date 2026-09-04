@@ -40,12 +40,8 @@ export default async function AdminContainersPage({
   return (
     <div className="space-y-8">
       <PageHeader
-        title="QR Container Fleet & Management"
+        title="QR Container Issuance & Management"
         description="Issue and manage persistent digital identities for reusable physical waste containers across schools, markets, and supporting contributors."
-        breadcrumbs={[
-          { label: "Overview", href: "/dashboard" },
-          { label: "QR Containers" },
-        ]}
       />
 
       <div className="grid gap-8 lg:grid-cols-3">
