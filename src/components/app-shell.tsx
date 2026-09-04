@@ -35,45 +35,48 @@ type NavItem = {
   href: string;
   label: string;
   icon: typeof LayoutDashboard;
-  permission?: Permission;
+  permission?: Permission | Permission[];
 };
 
-const groups = [
+const groups: Array<{
+  label: string;
+  items: NavItem[];
+}> = [
   { label: "Overview", items: [{ href: "ROLE_DASHBOARD", label: "Dashboard", icon: LayoutDashboard }] },
   {
     label: "Waste Operations",
     items: [
-      { href: "/admin/containers", label: "QR Containers", icon: QrCode, permission: "manage_containers" as const },
-      { href: "/batches", label: "Waste Batches", icon: QrCode },
-      { href: "/batches/new", label: "Register Organic Load", icon: Recycle, permission: "create_waste_record" as const },
-      { href: "/scan", label: "QR Scanner", icon: ScanLine },
-      { href: "/operations/pickups", label: "Pickups", icon: CalendarCheck, permission: "view_reports" as const },
-      { href: "/operations/inspections", label: "Inspections", icon: ClipboardCheck, permission: "inspect_batch" as const },
+      { href: "/admin/containers", label: "QR Containers", icon: QrCode, permission: "manage_containers" },
+      { href: "/batches", label: "Waste Batches", icon: QrCode, permission: "view_batches" },
+      { href: "/batches/new", label: "Register Organic Load", icon: Recycle, permission: "create_waste_record" },
+      { href: "/scan", label: "QR Scanner", icon: ScanLine, permission: ["create_waste_record", "inspect_batch"] },
+      { href: "/operations/pickups", label: "Pickups", icon: CalendarCheck, permission: ["request_pickup", "respond_pickup_request", "manage_pickup_logistics"] },
+      { href: "/operations/inspections", label: "Inspections", icon: ClipboardCheck, permission: "inspect_batch" },
     ],
   },
   {
     label: "Energy Operations",
     items: [
-      { href: "/operations/conversions", label: "Conversion Cycles", icon: Factory, permission: "record_conversion" as const },
-      { href: "/operations/allocations", label: "Allocations", icon: Zap, permission: "view_reports" as const },
-      { href: "/operations/fulfilment", label: "Fulfilment", icon: Gauge, permission: "view_reports" as const },
+      { href: "/operations/conversions", label: "Conversion Cycles", icon: Factory, permission: "record_conversion" },
+      { href: "/operations/allocations", label: "Allocations", icon: Zap, permission: ["calculate_allocation", "manage_org"] },
+      { href: "/operations/fulfilment", label: "Fulfilment", icon: Gauge, permission: ["fulfil_allocation", "manage_org"] },
     ],
   },
   {
     label: "Reports",
     items: [
-      { href: "/reports/impact", label: "Impact", icon: BarChart3, permission: "view_reports" as const },
-      { href: "/reports/sustainability", label: "Sustainability", icon: FileText, permission: "view_reports" as const },
+      { href: "/reports/impact", label: "Impact", icon: BarChart3, permission: "view_reports" },
+      { href: "/reports/sustainability", label: "Sustainability", icon: FileText, permission: "view_reports" },
     ],
   },
   {
     label: "Management",
     items: [
-      { href: "/admin/facilities", label: "Facilities", icon: Factory, permission: "manage_org" as const },
-      { href: "/admin/users", label: "Organisations and Users", icon: Users, permission: "manage_org" as const },
-      { href: "/admin/safety", label: "Safety", icon: ShieldAlert, permission: "manage_safety" as const },
-      { href: "/admin/audit", label: "Audit Logs", icon: FileText, permission: "view_audit" as const },
-      { href: "/admin/settings", label: "Settings", icon: Settings, permission: "manage_system" as const },
+      { href: "/admin/facilities", label: "Facilities", icon: Factory, permission: "manage_org" },
+      { href: "/admin/users", label: "Organisations and Users", icon: Users, permission: "manage_org" },
+      { href: "/admin/safety", label: "Safety", icon: ShieldAlert, permission: "manage_safety" },
+      { href: "/admin/audit", label: "Audit Logs", icon: FileText, permission: "view_audit" },
+      { href: "/admin/settings", label: "Settings", icon: Settings, permission: "manage_system" },
     ],
   },
 ];
@@ -82,12 +85,20 @@ function resolveHref(href: string, role: Role) {
   return href === "ROLE_DASHBOARD" ? roleDashboardPath(role) : href;
 }
 
+function isItemVisible(role: Role, item: NavItem): boolean {
+  if (!item.permission) return true;
+  if (Array.isArray(item.permission)) {
+    return item.permission.some((p) => can(role, p));
+  }
+  return can(role, item.permission);
+}
+
 function NavContent({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <nav className="grid gap-5" aria-label="Workspace navigation">
       {groups.map((group) => {
-        const items = group.items.filter((item) => !item.permission || can(role, item.permission));
+        const items = group.items.filter((item) => isItemVisible(role, item));
         if (!items.length) return null;
         return (
           <div key={group.label}>
