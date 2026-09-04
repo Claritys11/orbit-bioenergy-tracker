@@ -61,6 +61,15 @@ export const authConfig = {
     }),
   ],
   callbacks: {
+    redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return url;
+      try {
+        if (new URL(url).origin === baseUrl) return url;
+      } catch {
+        // ignore URL parsing error
+      }
+      return baseUrl;
+    },
     jwt({ token, user }) {
       if (user) {
         token.role = user.role;
