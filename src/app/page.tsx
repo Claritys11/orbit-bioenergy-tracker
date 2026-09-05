@@ -14,21 +14,21 @@ import { formatGas, formatKg } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 const workflow = [
-  ["Tag Container", "Super Admin issues persistent digital identity tags (e.g. CNT-TELKOM-001-01) attached to physical reusable waste bins."],
-  ["Register Batch", "Canteen staff scan the reusable container QR and submit declared organic waste weight."],
-  ["Schedule & Transit", "ORBIT schedules operator pickup and tracks container transport to the TPS3R facility."],
-  ["Inspect & Empty", "Operators inspect contamination rate and empty the container at the facility, immediately returning the bin to AVAILABLE status."],
-  ["Biodigester Conversion", "Accepted organic feedstock enters the biodigester for anaerobic digestion."],
-  ["Record Verified Gas", "Facility records actual measured biogas output post-conversion."],
-  ["Purity-to-Power Allocation", "ORBIT allocates energy credit using verified allocatable gas (50% schools / 30% operator / 20% contributors)."],
-  ["Energy Return & Impact", "Energy fulfilment and public-safe sustainability impact are reported transparently."],
+  ["Tag Container", "Super Admin issues persistent digital identity tags (e.g. CNT-SMK99M-001) attached to physical reusable waste drums."],
+  ["Register Batch", "Canteen staff select assigned reusable containers and mark organic waste loads as ready for school collection."],
+  ["Schedule & Transit", "Schools request collection. Logistics operators schedule vehicle dispatch and transport containers to community facilities."],
+  ["Inspect & Empty", "Community facility staff perform calibrated weighing, separate contamination, and empty containers into digester hoppers."],
+  ["Biodigester Conversion", "Accepted organic feedstock undergoes anaerobic digestion managed by trained facility operators."],
+  ["Record Verified Gas", "Facility staff record actual measured physical biogas output from calibrated flow meters."],
+  ["Purity-to-Power Allocation", "ORBIT allocates clean energy credits: 50% to participating schools, 30% to Community Facility / O&M Pool, and 20% to contributors."],
+  ["Energy Return & Impact", "Physical clean energy is fulfilled to beneficiaries, and public sustainability impact is transparently reported."],
 ];
 
 const userSteps = [
-  ["School/Canteen", "Sign in, create a batch, enter category and weight, generate QR, prepare for pickup, monitor inspection, and view allocation."],
-  ["Operator", "View incoming batches, schedule pickup, inspect contamination, create conversion cycles, record verified gas, confirm allocation, and record fulfilment."],
-  ["Public Visitor", "Open Live Impact, inspect public organisations, trace a batch, read methodology, and verify sources."],
-  ["Student", "Follow the waste journey, learn contamination feedback, and understand impact without handling gas equipment."],
+  ["School & Canteen", "Sort food waste, register reusable container loads, mark ready, and coordinate collection requests."],
+  ["Logistics Operator", "Review pickup requests, schedule vehicle collection routes, transport containers, and confirm hub delivery."],
+  ["Community Facility", "Receive containers, perform calibrated weighing & contamination inspection, convert feedstock, and verify metered biogas."],
+  ["Student", "Explore the circular waste journey, understand contamination impacts on bioenergy, and view school achievements without handling gas equipment."],
 ];
 
 const partnerCards = [
@@ -207,7 +207,7 @@ export default async function Home() {
               <p className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--orbit-primary)]">Allocation Model</p>
               <h2 className="mt-3 text-4xl font-bold text-[var(--orbit-primary)]">50 / 30 / 20 is a pilot assumption.</h2>
               <div className="mt-6 grid gap-3">
-                {[["Schools", "50%"], ["Partner operator", "30%"], ["Supporting contributors", "20%"]].map(([label, value]) => (
+                {[["Participating Schools", "50%"], ["Community Facility / O&M Pool", "30%"], ["Supporting Contributors", "20%"]].map(([label, value]) => (
                   <div key={label} className="rounded-lg border border-slate-200 bg-white p-4">
                     <div className="flex items-center justify-between"><span className="font-bold">{label}</span><span className="text-2xl font-bold text-[var(--orbit-primary)]">{value}</span></div>
                   </div>

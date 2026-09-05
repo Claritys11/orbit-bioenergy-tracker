@@ -124,37 +124,50 @@ export function ConversionForm({
         )}
       </fieldset>
 
-      {/* Input Summary & Model Estimate */}
-      <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-        <div>
-          <p className="text-xs font-medium text-slate-500">Input Feedstock Organics</p>
-          <p className="mt-1 text-xl font-extrabold text-slate-900">
-            {formatKg(totalAcceptedMass)}
-          </p>
-          <p className="text-[11px] text-slate-500">{selectedBatches.length} batch(es) selected</p>
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5">
-            <p className="text-xs font-medium text-slate-500">ORBIT Estimated Gas</p>
-            <span className="rounded bg-slate-200 px-1.5 py-0.2 text-[10px] font-bold text-slate-700">
-              Estimated
-            </span>
+      {/* Input Summary & Three-Way Gas Comparison */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+        <div className="rounded-lg bg-white p-3 border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase">1. Theoretical Model</span>
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">Estimated</span>
           </div>
-          <p className="mt-1 text-xl font-extrabold text-[var(--orbit-primary)]">
+          <p className="mt-2 text-xl font-black text-slate-700">
             {formatGas(totalEstimatedGas)}
           </p>
-          <p className="text-[11px] text-slate-500">Calculated from feedstock yield factors</p>
+          <p className="text-[10px] text-slate-400 mt-1">Based on feedstock yield factors</p>
+        </div>
+
+        <div className="rounded-lg bg-white p-3 border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase">2. Facility Meter Log</span>
+            <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">Measured</span>
+          </div>
+          <p className="mt-2 text-xl font-black text-blue-900">
+            {measuredGas !== "" ? `${measuredGas} m³` : "Pending input"}
+          </p>
+          <p className="text-[10px] text-slate-400 mt-1">Physical flow meter reading</p>
+        </div>
+
+        <div className="rounded-lg bg-white p-3 border border-slate-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase">3. Official Allocation</span>
+            <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">Verified</span>
+          </div>
+          <p className="mt-2 text-xl font-black text-emerald-700">
+            {measuredGas !== "" ? `${measuredGas} m³` : "Pending input"}
+          </p>
+          <p className="text-[10px] text-slate-400 mt-1">Allocatable energy pool basis</p>
         </div>
       </div>
 
-      {/* Measured Physical Output */}
+      {/* Measured Physical Output Form */}
       <div className="rounded-xl border-2 border-[var(--orbit-primary)]/30 bg-white p-4 shadow-xs">
         <div className="flex items-center justify-between mb-2">
           <label className="text-xs font-bold uppercase tracking-wider text-slate-800">
-            Physical Gas Measurement (Facility Meter Log)
+            Physical Gas Measurement (Calibrated Facility Flow Meter)
           </label>
           <span className="rounded bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-800">
-            Verified Output
+            Flow Meter Reading
           </span>
         </div>
 

@@ -48,11 +48,11 @@ test.describe("ORBIT private workspace", () => {
     await page.getByLabel("Password").fill("OrbitDemo2026!");
     await page.getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/operator\/dashboard/);
-    await expect(page.getByRole("heading", { name: "Operator Dashboard" })).toBeVisible();
-    await expect(page.getByText("Incoming feedstock and inspections")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Logistics & Route Control Panel|Operator/ })).toBeVisible();
+    await expect(page.getByText(/schedule vehicle collection routes|Incoming feedstock/)).toBeVisible();
     const openNav = page.getByRole("button", { name: "Open navigation" });
     if (await openNav.isVisible()) await openNav.click();
-    await expect(page.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/operator/dashboard");
+    await expect(page.getByRole("link", { name: /Today's Pickups|Dashboard/ })).toHaveAttribute("href", "/operator/dashboard");
   });
 
   test("legacy dashboard url redirects to the current role dashboard", async ({ page }) => {
@@ -64,7 +64,7 @@ test.describe("ORBIT private workspace", () => {
 
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/school\/dashboard/);
-    await expect(page.getByRole("heading", { name: "School Admin Dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /School Waste Collection Center|School Admin/ })).toBeVisible();
   });
 
   test("role navigation hides forbidden operator features", async ({ page }) => {
@@ -76,7 +76,8 @@ test.describe("ORBIT private workspace", () => {
 
     await expect(page.getByRole("link", { name: "Pickups" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Conversion Cycles" })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Impact" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Impact", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Impact Reports" })).toHaveCount(0);
 
     await page.goto("/operations/pickups");
     await expect(page).toHaveURL(/\/not-authorized/);

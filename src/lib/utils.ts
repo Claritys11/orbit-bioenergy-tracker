@@ -15,7 +15,8 @@ export function formatGas(value: number | null | undefined, fallback = "Pending 
   return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} m3`;
 }
 
-export function humanise(value: string) {
+export function humanise(value: string | null | undefined, fallback = "Not requested") {
+  if (!value) return fallback;
   return value
     .toLowerCase()
     .split("_")

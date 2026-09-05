@@ -85,10 +85,10 @@ export function ContainerReceiver() {
 
             <div className="mt-4 flex gap-2">
               <Link
-                href="/operations/inspections"
-                className="inline-flex items-center justify-center rounded-lg bg-[var(--orbit-primary)] px-4 py-2 text-xs font-bold text-white shadow-xs hover:opacity-90"
+                href={receivedResult.batchId ? `/operations/inspections?batchId=${receivedResult.batchId}` : "/operations/inspections"}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--orbit-primary)] px-5 py-2.5 text-xs font-black text-white shadow-md hover:bg-[var(--orbit-primary-dark)]"
               >
-                Proceed to Weighing & Inspection →
+                Continue to Weigh & Inspect →
               </Link>
             </div>
           </div>

@@ -19,6 +19,7 @@ import {
   Search,
   Settings,
   ShieldAlert,
+  Truck,
   Users,
   X,
   Zap,
@@ -38,48 +39,119 @@ type NavItem = {
   permission?: Permission | Permission[];
 };
 
-const groups: Array<{
+type NavGroup = {
   label: string;
   items: NavItem[];
-}> = [
-  { label: "Overview", items: [{ href: "ROLE_DASHBOARD", label: "Dashboard", icon: LayoutDashboard }] },
-  {
-    label: "Waste Operations",
-    items: [
-      { href: "/admin/containers", label: "QR Containers", icon: QrCode, permission: "manage_containers" },
-      { href: "/batches", label: "Waste Batches", icon: QrCode, permission: "view_batches" },
-      { href: "/batches/new", label: "Register Organic Load", icon: Recycle, permission: "create_waste_record" },
-      { href: "/scan", label: "Receive Container", icon: ScanLine, permission: "receive_container" },
-      { href: "/operations/pickups", label: "Pickups", icon: CalendarCheck, permission: ["request_pickup", "respond_pickup_request", "manage_pickup_logistics"] },
-      { href: "/operations/inspections", label: "Inspections", icon: ClipboardCheck, permission: "inspect_batch" },
-    ],
-  },
-  {
-    label: "Bioenergy Operations",
-    items: [
-      { href: "/operations/conversions", label: "Conversion Cycles", icon: Factory, permission: "record_conversion" },
-      { href: "/operations/allocations", label: "Allocations", icon: Zap, permission: "manage_system" },
-      { href: "/operations/fulfilment", label: "Energy Fulfilment", icon: Gauge, permission: "fulfil_allocation" },
-    ],
-  },
-  {
-    label: "Reports",
-    items: [
-      { href: "/reports/impact", label: "Impact", icon: BarChart3, permission: "view_reports" },
-      { href: "/reports/sustainability", label: "Sustainability", icon: FileText, permission: "view_reports" },
-    ],
-  },
-  {
-    label: "Management",
-    items: [
-      { href: "/admin/facilities", label: "Facilities", icon: Factory, permission: "manage_system" },
-      { href: "/admin/users", label: "Organisations and Users", icon: Users, permission: "manage_system" },
-      { href: "/admin/safety", label: "Safety", icon: ShieldAlert, permission: "manage_safety" },
-      { href: "/admin/audit", label: "Audit Logs", icon: FileText, permission: "view_audit" },
-      { href: "/admin/settings", label: "Settings", icon: Settings, permission: "manage_system" },
-    ],
-  },
-];
+};
+
+function getRoleNavGroups(role: Role): NavGroup[] {
+  switch (role) {
+    case "CANTEEN_STAFF":
+      return [
+        {
+          label: "Canteen Operations",
+          items: [
+            { href: "ROLE_DASHBOARD", label: "Dashboard", icon: LayoutDashboard },
+            { href: "/batches/new", label: "Register Organic Waste", icon: Recycle, permission: "create_waste_record" },
+            { href: "/batches", label: "Waste Records", icon: ClipboardCheck, permission: "view_batches" },
+            { href: "/admin/containers", label: "Assigned Containers", icon: QrCode, permission: "manage_containers" },
+          ],
+        },
+      ];
+
+    case "SCHOOL_ADMIN":
+      return [
+        {
+          label: "School Collection",
+          items: [
+            { href: "ROLE_DASHBOARD", label: "Dashboard", icon: LayoutDashboard },
+            { href: "/batches", label: "Ready Waste", icon: ClipboardCheck, permission: "view_batches" },
+            { href: "/operations/pickups", label: "Pickup Requests", icon: CalendarCheck, permission: "request_pickup" },
+            { href: "/admin/containers", label: "Containers", icon: QrCode, permission: "manage_containers" },
+            { href: "/reports/impact", label: "School Impact", icon: BarChart3, permission: "view_reports" },
+          ],
+        },
+      ];
+
+    case "OPERATOR":
+      return [
+        {
+          label: "Logistics Control Panel",
+          items: [
+            { href: "ROLE_DASHBOARD", label: "Today's Pickups", icon: LayoutDashboard },
+            { href: "/operations/pickups", label: "Incoming Requests", icon: CalendarCheck, permission: "respond_pickup_request" },
+            { href: "/operations/pickups", label: "Active Routes", icon: Truck, permission: "manage_pickup_logistics" },
+            { href: "/batches", label: "Manifest & Deliveries", icon: ClipboardCheck, permission: "view_batches" },
+          ],
+        },
+      ];
+
+    case "COMMUNITY_PARTNER":
+      return [
+        {
+          label: "Facility Operations",
+          items: [
+            { href: "ROLE_DASHBOARD", label: "Operations Center", icon: LayoutDashboard },
+            { href: "/scan", label: "Receive Container", icon: ScanLine, permission: "receive_container" },
+            { href: "/operations/inspections", label: "Weigh & Inspect", icon: ClipboardCheck, permission: "inspect_batch" },
+            { href: "/operations/conversions", label: "Conversion Cycles", icon: Factory, permission: "record_conversion" },
+            { href: "/operations/allocations", label: "Allocations", icon: Zap, permission: "manage_system" },
+            { href: "/operations/fulfilment", label: "Energy Fulfilment", icon: Gauge, permission: "fulfil_allocation" },
+            { href: "/batches", label: "Incoming Batches", icon: QrCode, permission: "view_batches" },
+            { href: "/reports/impact", label: "Facility Reports", icon: BarChart3, permission: "view_reports" },
+          ],
+        },
+      ];
+
+    case "STUDENT":
+      return [
+        {
+          label: "Circular Learning",
+          items: [
+            { href: "ROLE_DASHBOARD", label: "Overview", icon: LayoutDashboard },
+            { href: "/student/school", label: "My School Impact", icon: Users },
+            { href: "/student/journey", label: "ORBIT Journey", icon: Recycle },
+            { href: "/impact", label: "Verified Impact", icon: BarChart3 },
+            { href: "/student/learn", label: "Learn", icon: FileText },
+          ],
+        },
+      ];
+
+    case "SUPER_ADMIN":
+    default:
+      return [
+        {
+          label: "Governance",
+          items: [
+            { href: "ROLE_DASHBOARD", label: "System Dashboard", icon: LayoutDashboard },
+            { href: "/admin/users", label: "Organisations & Users", icon: Users, permission: "manage_system" },
+            { href: "/admin/facilities", label: "Facilities", icon: Factory, permission: "manage_system" },
+            { href: "/admin/containers", label: "QR Containers", icon: QrCode, permission: "manage_containers" },
+          ],
+        },
+        {
+          label: "Operations",
+          items: [
+            { href: "/batches", label: "Waste Batches", icon: QrCode, permission: "view_batches" },
+            { href: "/operations/pickups", label: "Pickups", icon: CalendarCheck, permission: "request_pickup" },
+            { href: "/operations/inspections", label: "Inspections", icon: ClipboardCheck, permission: "inspect_batch" },
+            { href: "/operations/conversions", label: "Conversions", icon: Factory, permission: "record_conversion" },
+            { href: "/operations/allocations", label: "Allocations", icon: Zap, permission: "manage_system" },
+            { href: "/operations/fulfilment", label: "Fulfilment", icon: Gauge, permission: "fulfil_allocation" },
+          ],
+        },
+        {
+          label: "Safety & Audit",
+          items: [
+            { href: "/reports/impact", label: "Impact Reports", icon: BarChart3, permission: "view_reports" },
+            { href: "/admin/safety", label: "Safety Alerts", icon: ShieldAlert, permission: "manage_safety" },
+            { href: "/admin/audit", label: "Audit Logs", icon: FileText, permission: "view_audit" },
+            { href: "/admin/settings", label: "Settings", icon: Settings, permission: "manage_system" },
+          ],
+        },
+      ];
+  }
+}
 
 function resolveHref(href: string, role: Role) {
   return href === "ROLE_DASHBOARD" ? roleDashboardPath(role) : href;
@@ -95,6 +167,8 @@ function isItemVisible(role: Role, item: NavItem): boolean {
 
 function NavContent({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const groups = getRoleNavGroups(role);
+
   return (
     <nav className="grid gap-5" aria-label="Workspace navigation">
       {groups.map((group) => {
@@ -102,7 +176,7 @@ function NavContent({ role, onNavigate }: { role: Role; onNavigate?: () => void 
         if (!items.length) return null;
         return (
           <div key={group.label}>
-            <p className="mb-2 px-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{group.label}</p>
+            <p className="mb-2 px-3 text-xs font-bold uppercase tracking-[0.14em] text-blue-200/80">{group.label}</p>
             <div className="grid gap-1">
               {items.map((item: NavItem) => {
                 const Icon = item.icon;
@@ -110,12 +184,12 @@ function NavContent({ role, onNavigate }: { role: Role; onNavigate?: () => void 
                 const active = pathname === href || pathname.startsWith(`${href}/`);
                 return (
                   <Link
-                    key={href}
+                    key={`${group.label}-${item.label}-${href}`}
                     href={href}
                     onClick={onNavigate}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-200 hover:bg-white/10 hover:text-white",
-                      active && "bg-white text-slate-950 hover:bg-white hover:text-slate-950",
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-100 hover:bg-white/10 hover:text-white transition",
+                      active && "bg-white text-slate-950 font-bold shadow-xs hover:bg-white hover:text-slate-950",
                     )}
                   >
                     <Icon size={18} aria-hidden />

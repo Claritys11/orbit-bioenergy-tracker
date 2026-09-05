@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { OperatorPickupInbox } from "@/components/operator-pickup-inbox";
 import { SchoolPickupRequestForm } from "@/components/school-pickup-request-form";
 import { Badge, Card, PageHeader } from "@/components/ui";
@@ -13,6 +14,10 @@ export default async function PickupsPage() {
 
   const isSchoolUser = can(role, "request_pickup") && role !== "SUPER_ADMIN";
   const isOperatorUser = can(role, "respond_pickup_request") || role === "SUPER_ADMIN";
+
+  if (!isSchoolUser && !isOperatorUser) {
+    redirect("/not-authorized");
+  }
 
   const [readyBatches, schoolRequests, operatorRequests, vehicles] = await Promise.all([
     isSchoolUser && user.organisationId

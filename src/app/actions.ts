@@ -197,7 +197,7 @@ export async function createBatchAction(_: unknown, formData: FormData) {
         responsibleUserId: user.id,
         storageStatus: parsed.data.storageStatus || "Container filled and ready",
         status: "READY_FOR_PICKUP",
-        pickupStatus: "REQUESTED",
+        pickupStatus: undefined,
         activityTimeline: [
           { status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: user.name },
         ],
@@ -1178,12 +1178,12 @@ export async function createBatchFromContainerAction(_: unknown, formData: FormD
         sourceOrganisationId: container.organisationId,
         sourceId: container.sourceId,
         categoryId: container.categoryId,
-        grossWeightKg: parsed.data.declaredMassKg,
+        grossWeightKg: null, // Unverified at source! Verified only at Community Facility inspection
         declaredMassKg: parsed.data.declaredMassKg,
         collectionTimestamp: new Date(),
         responsibleUserId: user.id,
         storageStatus: "Container Filled & Ready",
-        pickupStatus: "REQUESTED",
+        pickupStatus: undefined,
         status: "READY_FOR_PICKUP",
         activityTimeline: [
           { status: "READY_FOR_PICKUP", at: new Date().toISOString(), actor: user.name },

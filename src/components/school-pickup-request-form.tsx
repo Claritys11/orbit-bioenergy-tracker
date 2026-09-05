@@ -147,8 +147,12 @@ export function SchoolPickupRequestForm({ readyBatches }: { readyBatches: ReadyB
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold text-sm text-[var(--orbit-primary)]">
-                        {formatKg(batch.grossWeightKg)}
+                      <span className="font-semibold text-xs text-[var(--orbit-primary)]">
+                        {batch.grossWeightKg
+                          ? `${formatKg(batch.grossWeightKg)} (Verified)`
+                          : batch.declaredMassKg
+                          ? `~${formatKg(batch.declaredMassKg)} (Est)`
+                          : "Awaiting facility weighing"}
                       </span>
                     </div>
                   </label>
@@ -157,14 +161,16 @@ export function SchoolPickupRequestForm({ readyBatches }: { readyBatches: ReadyB
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between rounded-md bg-blue-50/60 p-4 text-sm">
+          <div className="flex flex-wrap items-center justify-between rounded-xl bg-blue-50/70 p-4 text-xs">
             <div>
-              <span className="text-slate-600">Total Selected Items: </span>
-              <span className="font-bold text-black">{selectedIds.length} ready bags/containers</span>
+              <span className="text-slate-600">Selected Ready Items: </span>
+              <span className="font-bold text-slate-900">{selectedIds.length} container load(s)</span>
             </div>
             <div>
-              <span className="text-slate-600">Total Declared Weight: </span>
-              <span className="font-extrabold text-[var(--orbit-primary)]">{formatKg(totalWeight)}</span>
+              <span className="text-slate-600">Total Declared Load: </span>
+              <span className="font-bold text-[var(--orbit-primary)]">
+                {totalWeight > 0 ? `~${formatKg(totalWeight)} (Estimated)` : "Awaiting facility weighing"}
+              </span>
             </div>
           </div>
 

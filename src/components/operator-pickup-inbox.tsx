@@ -6,8 +6,20 @@ import {
   respondPickupRequestFormAction,
   schedulePickupLogisticsFormAction,
 } from "@/app/actions";
-import { Badge, Button, Card, Field, SelectField, TextareaField } from "@/components/ui";
+import {
+  AlertBanner,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  MobileCard,
+  SelectField,
+  StatusBadge,
+  TextareaField,
+} from "@/components/ui";
 import { formatKg, humanise } from "@/lib/utils";
+import { CalendarCheck, CheckCircle2, Clock, MapPin, Truck, XCircle } from "lucide-react";
 
 type PickupRequestData = {
   id: string;
@@ -55,21 +67,15 @@ export function OperatorPickupInbox({
 }) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [schedulingId, setSchedulingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-
-  const getUrgencyIndicator = (itemCount: number) => {
-    if (itemCount <= 1) {
-      return { label: "LOW ACCUMULATION", tone: "green" as const, colorClass: "bg-emerald-100 text-emerald-800" };
-    }
-    if (itemCount <= 5) {
-      return { label: "PICKUP RECOMMENDED", tone: "amber" as const, colorClass: "bg-amber-100 text-amber-900" };
-    }
-    return { label: "HIGH ACCUMULATION / PRIORITY", tone: "red" as const, colorClass: "bg-red-100 text-red-800 border-red-200 font-extrabold animate-pulse" };
-  };
+  const [activeTab, setActiveTab] = useState<"NEW" | "SCHEDULED" | "TRANSIT" | "DELIVERED">("NEW");
 
   const pendingRequests = requests.filter((r) => r.status === "PENDING_OPERATOR_RESPONSE");
-  const acceptedRequests = requests.filter((r) => r.status === "ACCEPTED" || r.status === "SCHEDULED" || r.status === "IN_TRANSIT");
+  const scheduledRequests = requests.filter((r) => r.status === "ACCEPTED" || r.status === "SCHEDULED");
+  const transitRequests = requests.filter((r) => r.status === "IN_TRANSIT");
+  const deliveredRequests = requests.filter((r) => r.status === "DELIVERED");
 
   async function handleRespond(requestId: string, decision: "ACCEPT" | "REJECT") {
     setError(null);
@@ -103,224 +109,380 @@ export function OperatorPickupInbox({
 
   return (
     <div className="grid gap-6">
-      {/* 1. Pending Incoming Requests Section */}
-      <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
-            <h2 className="text-lg font-bold text-black">Incoming School Pickup Requests</h2>
-            <p className="text-sm text-slate-500">
-              Review collection demand requested by schools. Accept to schedule logistics or reject with a reason.
-            </p>
-          </div>
-          <span className="rounded-full bg-[var(--orbit-primary)] px-3 py-1 text-xs font-bold text-white">
-            {pendingRequests.length} Pending
+      {error ? (
+        <AlertBanner tone="error" title="Action Failed">
+          {error}
+        </AlertBanner>
+      ) : null}
+
+      {/* Mobile-Friendly Quick Tab Strip */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab("NEW")}
+          className={`flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
+            activeTab === "NEW"
+              ? "bg-[var(--orbit-primary)] text-white shadow-sm"
+              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <span>Incoming Requests</span>
+          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black text-black">
+            {pendingRequests.length}
           </span>
-        </div>
+        </button>
 
-        {error ? (
-          <div className="mt-4 rounded-md bg-red-50 p-3 text-sm font-semibold text-red-700">
-            {error}
+        <button
+          type="button"
+          onClick={() => setActiveTab("SCHEDULED")}
+          className={`flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
+            activeTab === "SCHEDULED"
+              ? "bg-[var(--orbit-primary)] text-white shadow-sm"
+              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <span>Scheduled / Dispatch</span>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-800">
+            {scheduledRequests.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("TRANSIT")}
+          className={`flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
+            activeTab === "TRANSIT"
+              ? "bg-[var(--orbit-primary)] text-white shadow-sm"
+              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <span>In Transit</span>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-800">
+            {transitRequests.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("DELIVERED")}
+          className={`flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
+            activeTab === "DELIVERED"
+              ? "bg-[var(--orbit-primary)] text-white shadow-sm"
+              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <span>Completed</span>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-800">
+            {deliveredRequests.length}
+          </span>
+        </button>
+      </div>
+
+      {/* 1. NEW REQUESTS TAB */}
+      {activeTab === "NEW" ? (
+        <Card className="p-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-950">New School Collection Demands</h2>
+              <p className="text-xs text-slate-500">Review proposed pickup windows and accept for vehicle dispatch</p>
+            </div>
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
+              {pendingRequests.length} Awaiting Response
+            </span>
           </div>
-        ) : null}
 
-        {pendingRequests.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-500">
-            No pending pickup requests at this time.
-          </div>
-        ) : (
-          <div className="mt-4 grid gap-4">
-            {pendingRequests.map((req) => {
-              const itemCount = req.items.length;
-              const totalMass = req.items.reduce((acc, i) => acc + (i.batch.grossWeightKg ?? i.batch.declaredMassKg ?? 0), 0);
-              const urgency = getUrgencyIndicator(itemCount);
-              const isRejecting = rejectingId === req.id;
+          {pendingRequests.length === 0 ? (
+            <EmptyState
+              title="No pending pickup requests"
+              description="Schools have not submitted any new pickup requests. When containers are marked ready, they will appear here."
+            />
+          ) : (
+            <div className="mt-4 grid gap-4">
+              {pendingRequests.map((req) => {
+                const totalMass = req.items.reduce((acc, i) => acc + (i.batch.grossWeightKg ?? i.batch.declaredMassKg ?? 0), 0);
+                const isRejecting = rejectingId === req.id;
 
-              return (
-                <div
-                  key={req.id}
-                  className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-[var(--orbit-primary)]/40"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs font-semibold text-slate-500">{req.requestCode}</span>
-                        <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${urgency.colorClass}`}>
-                          {urgency.label}
-                        </span>
+                return (
+                  <MobileCard key={req.id} className="border-2 border-amber-200 bg-amber-50/20">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-slate-900">{req.requestCode}</span>
+                          <StatusBadge status={req.status} />
+                        </div>
+                        <h3 className="mt-1 text-lg font-black text-slate-950">{req.schoolOrganisation.name}</h3>
+                        <p className="text-xs text-slate-500">Requested by {req.requestedByUser.name}</p>
                       </div>
-                      <h3 className="mt-1 text-lg font-bold text-black">{req.schoolOrganisation.name}</h3>
-                      <p className="text-xs text-slate-500">Requested by {req.requestedByUser.name}</p>
+                      <div className="text-right">
+                        <p className="text-lg font-black text-[var(--orbit-primary)]">
+                          {totalMass > 0 ? `~${formatKg(totalMass)}` : "Awaiting weighing"}
+                        </p>
+                        <p className="text-xs font-semibold text-slate-600">{req.items.length} container load(s)</p>
+                      </div>
                     </div>
 
-                    <div className="text-right">
-                      <p className="text-xl font-extrabold text-[var(--orbit-primary)]">{totalMass > 0 ? formatKg(totalMass) : "Pending weighing"}</p>
-                      <p className="text-xs font-semibold text-slate-600">{itemCount} container load(s)</p>
+                    <div className="mt-3 rounded-xl bg-white p-3.5 border border-slate-200 text-xs text-slate-700">
+                      <div className="flex items-center gap-1.5 font-semibold text-slate-900">
+                        <Clock size={14} className="text-slate-400" />
+                        Proposed Window:
+                      </div>
+                      <p className="mt-1 pl-5">
+                        {new Date(req.proposedPickupStart).toLocaleString()} &mdash; {new Date(req.proposedPickupEnd).toLocaleTimeString()}
+                      </p>
+                      {req.notes ? (
+                        <p className="mt-2 pl-5 italic text-slate-600 bg-slate-50 p-2 rounded">
+                          &ldquo;{req.notes}&rdquo;
+                        </p>
+                      ) : null}
                     </div>
-                  </div>
 
-                  <div className="mt-4 rounded-md bg-slate-50 p-3 text-xs text-slate-700">
-                    <p className="font-semibold">Proposed Window:</p>
-                    <p>
-                      {new Date(req.proposedPickupStart).toLocaleString()} &mdash;{" "}
-                      {new Date(req.proposedPickupEnd).toLocaleString()}
-                    </p>
-                    {req.notes ? <p className="mt-1 italic text-slate-600">&ldquo;{req.notes}&rdquo;</p> : null}
-                  </div>
-
-                  <div className="mt-3">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-                      Ready Items ({itemCount}):
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {req.items.map((item) => (
-                        <span
-                          key={item.id}
-                          className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-800"
-                        >
-                          <span className="font-bold">{item.batch.batchCode}</span>
-                          {item.batch.container ? (
-                            <span className="text-slate-500">({item.batch.container.containerCode})</span>
-                          ) : null}
-                          <span>&bull; {formatKg(item.batch.grossWeightKg ?? item.batch.declaredMassKg)}</span>
-                        </span>
-                      ))}
+                    <div className="mt-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        Containers ({req.items.length}):
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {req.items.map((item) => (
+                          <span key={item.id} className="rounded-md bg-white border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-800">
+                            {item.batch.container?.containerCode ?? item.batch.batchCode}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {isRejecting ? (
-                    <div className="mt-4 rounded-md bg-red-50/70 p-3 border border-red-200">
-                      <p className="text-xs font-bold text-red-800 mb-2">Provide Reason for Rejection:</p>
-                      <input
-                        type="text"
-                        value={rejectionReason}
-                        onChange={(e) => setRejectionReason(e.target.value)}
-                        placeholder="e.g. Vehicle breakdown; please reschedule for tomorrow."
-                        className="w-full rounded border border-red-300 p-2 text-sm text-slate-900 bg-white"
-                      />
-                      <div className="mt-3 flex items-center justify-end gap-2">
+                    {isRejecting ? (
+                      <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                        <p className="text-xs font-bold text-red-900 mb-2">Provide reason for rejection:</p>
+                        <input
+                          type="text"
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                          placeholder="e.g. Truck breakdown, scheduling for next day"
+                          className="w-full rounded-md border border-red-300 p-2 text-xs bg-white text-slate-900"
+                        />
+                        <div className="mt-3 flex justify-end gap-2">
+                          <Button variant="secondary" onClick={() => setRejectingId(null)} className="text-xs min-h-9">
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={() => handleRespond(req.id, "REJECT")}
+                            disabled={isPending}
+                            className="bg-red-700 hover:bg-red-800 text-white text-xs min-h-9 font-bold"
+                          >
+                            Confirm Rejection
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-3">
                         <Button
                           variant="secondary"
-                          onClick={() => setRejectingId(null)}
-                          className="text-xs py-1"
+                          onClick={() => {
+                            setRejectingId(req.id);
+                            setRejectionReason("");
+                          }}
+                          disabled={isPending}
+                          className="min-h-11 text-xs"
                         >
-                          Cancel
+                          Reject Request
                         </Button>
                         <Button
-                          onClick={() => handleRespond(req.id, "REJECT")}
+                          onClick={() => handleRespond(req.id, "ACCEPT")}
                           disabled={isPending}
-                          className="bg-red-600 hover:bg-red-700 text-white text-xs py-1"
+                          className="bg-[#00C972] text-black hover:bg-[#00C972]/90 min-h-11 text-xs font-black px-5"
                         >
-                          Confirm Rejection
+                          <CheckCircle2 size={16} /> Accept Pickup Request
                         </Button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-3">
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          setRejectingId(req.id);
-                          setRejectionReason("");
-                        }}
-                        disabled={isPending}
-                        className="text-xs"
-                      >
-                        Reject Request
-                      </Button>
-                      <Button
-                        onClick={() => handleRespond(req.id, "ACCEPT")}
-                        disabled={isPending}
-                        className="bg-[#00C972] text-black hover:bg-[#00C972]/90 text-xs font-bold"
-                      >
-                        Accept Pickup Request
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
+                    )}
+                  </MobileCard>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      ) : null}
 
-      {/* 2. Accepted & Active Logistics Section */}
-      <Card>
-        <h2 className="text-lg font-bold text-black mb-1">Accepted & Scheduled Pickups</h2>
-        <p className="text-sm text-slate-500 mb-4">
-          Assign operator vehicle and monitor transport logistics from collection to facility delivery.
-        </p>
-
-        {acceptedRequests.length === 0 ? (
-          <div className="p-6 text-center text-sm text-slate-500">
-            No active or scheduled pickup routes currently in progress.
+      {/* 2. SCHEDULED / DISPATCH TAB */}
+      {activeTab === "SCHEDULED" ? (
+        <Card className="p-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-950">Accepted & Scheduled Routes</h2>
+              <p className="text-xs text-slate-500">Assign vehicle, configure route notes, and dispatch vehicle</p>
+            </div>
           </div>
-        ) : (
-          <div className="grid gap-4">
-            {acceptedRequests.map((req) => (
-              <div key={req.id} className="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-slate-500">{req.requestCode}</span>
-                      <Badge tone={req.status === "ACCEPTED" ? "amber" : req.status === "SCHEDULED" ? "green" : "blue"}>
-                        {humanise(req.status)}
-                      </Badge>
+
+          {scheduledRequests.length === 0 ? (
+            <EmptyState
+              title="No scheduled pickups"
+              description="Accepted requests will appear here for vehicle assignment and route confirmation."
+            />
+          ) : (
+            <div className="mt-4 grid gap-4">
+              {scheduledRequests.map((req) => (
+                <MobileCard key={req.id} className="p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-slate-900">{req.requestCode}</span>
+                        <StatusBadge status={req.status} />
+                      </div>
+                      <h3 className="mt-1 text-base font-bold text-slate-900">{req.schoolOrganisation.name}</h3>
+                      <p className="text-xs text-slate-500">{req.items.length} container load(s)</p>
                     </div>
-                    <p className="font-bold text-black text-base">{req.schoolOrganisation.name}</p>
-                    <p className="text-xs text-slate-500">{req.items.length} container load(s)</p>
+
+                    {req.status === "SCHEDULED" ? (
+                      <div className="text-right">
+                        <p className="text-xs font-semibold text-slate-500">Assigned Vehicle:</p>
+                        <p className="text-sm font-bold text-slate-900">{req.pickup?.vehicle?.label ?? "D 2046 ORB"}</p>
+                      </div>
+                    ) : null}
                   </div>
 
-                  <div>
-                    {req.status === "ACCEPTED" ? (
+                  {req.status === "ACCEPTED" ? (
+                    <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wider text-blue-900 mb-3">
+                        Vehicle & Logistics Dispatch
+                      </p>
                       <form
                         action={async (formData) => {
                           await schedulePickupLogisticsFormAction(formData);
+                          setSchedulingId(null);
                         }}
-                        className="flex flex-wrap items-center gap-2"
+                        className="grid gap-3 sm:grid-cols-2"
                       >
                         <input type="hidden" name="requestId" value={req.id} />
                         <SelectField
-                          label="Vehicle"
+                          label="Vehicle *"
                           name="vehicleId"
+                          required
                           options={vehicles.map((v) => ({ value: v.id, label: `${v.label} (${v.plate})` }))}
                         />
                         <Field
-                          label="Scheduled time"
+                          label="Actual Scheduled Time *"
                           name="actualScheduledAt"
                           type="datetime-local"
                           required
                           defaultValue={new Date(req.proposedPickupStart).toISOString().slice(0, 16)}
                         />
-                        <TextareaField
-                          label="Route notes"
-                          name="routeNotes"
-                          required
-                          defaultValue="Standard morning collection route."
-                        />
-                        <Button type="submit" className="text-xs">
-                          Confirm Logistics Schedule
-                        </Button>
+                        <div className="sm:col-span-2">
+                          <TextareaField
+                            label="Route Notes"
+                            name="routeNotes"
+                            required
+                            defaultValue="Standard school morning collection route. Reusable containers will be delivered to TPS3R hub."
+                          />
+                        </div>
+                        <div className="sm:col-span-2 flex justify-end">
+                          <Button className="min-h-11 font-bold text-xs">
+                            <Truck size={16} /> Confirm Schedule & Assign Vehicle
+                          </Button>
+                        </div>
                       </form>
-                    ) : req.status === "SCHEDULED" ? (
+                    </div>
+                  ) : req.status === "SCHEDULED" ? (
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                      <p className="text-xs text-slate-500">
+                        Vehicle assigned. Ready to depart for {req.schoolOrganisation.name}.
+                      </p>
                       <form action={confirmRequestDeliveryAction.bind(null, req.id, "IN_TRANSIT")}>
-                        <Button variant="secondary" className="text-xs">
-                          Mark Vehicle In Transit
+                        <Button className="min-h-11 font-bold text-xs bg-indigo-700 hover:bg-indigo-800 text-white">
+                          <Truck size={16} /> Mark Vehicle In Transit
                         </Button>
                       </form>
-                    ) : req.status === "IN_TRANSIT" ? (
-                      <form action={confirmRequestDeliveryAction.bind(null, req.id, "DELIVERED")}>
-                        <Button className="text-xs bg-[#00C972] text-black">
-                          Confirm Delivery to Facility
-                        </Button>
-                      </form>
-                    ) : null}
+                    </div>
+                  ) : null}
+                </MobileCard>
+              ))}
+            </div>
+          )}
+        </Card>
+      ) : null}
+
+      {/* 3. IN TRANSIT TAB */}
+      {activeTab === "TRANSIT" ? (
+        <Card className="p-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-950">Vehicles Currently In Transit</h2>
+              <p className="text-xs text-slate-500">Upon arrival at the community processing hub, confirm delivery</p>
+            </div>
+          </div>
+
+          {transitRequests.length === 0 ? (
+            <EmptyState
+              title="No vehicles currently in transit"
+              description="When drivers depart school collection points, active loads will appear here."
+            />
+          ) : (
+            <div className="mt-4 grid gap-4">
+              {transitRequests.map((req) => (
+                <MobileCard key={req.id} className="border-2 border-purple-200 bg-purple-50/20 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-slate-900">{req.requestCode}</span>
+                        <Badge tone="purple">🚚 En Route to Hub</Badge>
+                      </div>
+                      <h3 className="mt-1 text-lg font-bold text-slate-950">{req.schoolOrganisation.name}</h3>
+                      <p className="text-xs text-slate-500">Vehicle: {req.pickup?.vehicle?.label ?? "Logistics Van"} ({req.pickup?.vehicle?.plate ?? "D 2046 ORB"})</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-purple-900">{req.items.length} container load(s)</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-purple-100 pt-3">
+                    <p className="text-xs text-purple-950 font-medium">
+                      Standing at community hub? Confirm waste container drop-off:
+                    </p>
+                    <form action={confirmRequestDeliveryAction.bind(null, req.id, "DELIVERED")}>
+                      <Button className="min-h-11 font-black text-xs bg-[#00C972] text-black hover:bg-[#00C972]/90 shadow-md">
+                        <CheckCircle2 size={16} /> Confirm Delivery to Facility
+                      </Button>
+                    </form>
+                  </div>
+                </MobileCard>
+              ))}
+            </div>
+          )}
+        </Card>
+      ) : null}
+
+      {/* 4. DELIVERED TAB */}
+      {activeTab === "DELIVERED" ? (
+        <Card className="p-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-950">Recently Completed Deliveries</h2>
+              <p className="text-xs text-slate-500">Successfully handed over to community TPS3R facilities</p>
+            </div>
+          </div>
+
+          {deliveredRequests.length === 0 ? (
+            <EmptyState title="No completed deliveries yet" description="Completed logistics drop-offs will be archived here." />
+          ) : (
+            <div className="mt-4 grid gap-3">
+              {deliveredRequests.slice(0, 8).map((req) => (
+                <div key={req.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4 bg-slate-50/50 text-xs">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-slate-900">{req.requestCode}</span>
+                      <StatusBadge status="DELIVERED" />
+                    </div>
+                    <p className="mt-1 font-bold text-slate-900 text-sm">{req.schoolOrganisation.name}</p>
+                    <p className="text-slate-500">{req.items.length} container(s) delivered</p>
+                  </div>
+                  <div className="text-right text-slate-500">
+                    <p>Delivered</p>
+                    <p className="font-mono">{new Date(req.requestedAt).toLocaleDateString()}</p>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+              ))}
+            </div>
+          )}
+        </Card>
+      ) : null}
     </div>
   );
 }

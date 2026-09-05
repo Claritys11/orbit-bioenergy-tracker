@@ -125,12 +125,12 @@ export default async function ContainerAdaptivePage({
       <main id="main" className="mx-auto grid min-h-[70vh] max-w-4xl gap-8 px-4 py-10">
         {/* Banner Alert if Submitted */}
         {submitted ? (
-          <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900 shadow-sm">
+          <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900 shadow-sm">
             <div className="flex items-center gap-2 font-bold">
-              <span>✅</span> Batch Successfully Created & Registered
+              <span>✅</span> Waste Load Successfully Registered & Marked Ready
             </div>
-            <p className="mt-1">
-              Container status updated to <strong className="font-bold">READY_FOR_PICKUP</strong>. Operator pickup schedule notification has been dispatched.
+            <p className="mt-1 text-xs">
+              Container status updated to <strong className="font-bold">READY_FOR_PICKUP</strong>. School administrator can now request operator collection. Verified weighing will be performed at the Community Facility.
             </p>
           </div>
         ) : null}
@@ -216,19 +216,27 @@ export default async function ContainerAdaptivePage({
               <Badge tone="amber">{humanise(activeBatch.status)}</Badge>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-3 text-sm text-slate-800">
+            <div className="mt-4 grid gap-3 sm:grid-cols-3 text-xs text-slate-800">
               <div>
-                <span className="text-xs text-slate-500">Declared Weight:</span>
-                <p className="font-bold">{formatKg(activeBatch.declaredMassKg ?? activeBatch.grossWeightKg)}</p>
+                <span className="text-slate-500 font-medium">Source Mass:</span>
+                <p className="font-bold text-sm text-slate-900">
+                  {activeBatch.grossWeightKg
+                    ? `${formatKg(activeBatch.grossWeightKg)} (Verified)`
+                    : activeBatch.declaredMassKg
+                    ? `~${formatKg(activeBatch.declaredMassKg)} (Estimated)`
+                    : "Awaiting facility weighing"}
+                </p>
               </div>
               <div>
-                <span className="text-xs text-slate-500">Pickup Status:</span>
-                <p className="font-bold">{humanise(activeBatch.pickupStatus)}</p>
+                <span className="text-slate-500 font-medium">Pickup Request:</span>
+                <p className="font-bold text-sm text-slate-900">
+                  {humanise(activeBatch.pickupStatus, "Not yet requested")}
+                </p>
               </div>
               <div>
-                <span className="text-xs text-slate-500">Inspection Decision:</span>
-                <p className="font-bold">
-                  {activeBatch.inspection ? humanise(activeBatch.inspection.decision) : "Pending Facility Receipt"}
+                <span className="text-slate-500 font-medium">Inspection Decision:</span>
+                <p className="font-bold text-sm text-slate-900">
+                  {activeBatch.inspection ? humanise(activeBatch.inspection.decision) : "Awaiting Facility Receipt"}
                 </p>
               </div>
             </div>
@@ -365,8 +373,8 @@ export default async function ContainerAdaptivePage({
                       />
                     </label>
 
-                    <Button type="submit" variant="primary" className="mt-2">
-                      🚀 Submit Batch & Request Pickup
+                    <Button type="submit" variant="primary" className="mt-2 font-bold min-h-11">
+                      ✓ Mark Container Ready for Collection
                     </Button>
                   </form>
                 </div>
@@ -482,11 +490,17 @@ export default async function ContainerAdaptivePage({
                   {container.batches.map((b) => (
                     <tr key={b.id} className="hover:bg-slate-50">
                       <td className="p-3 font-mono font-bold text-slate-900">{b.batchCode}</td>
-                      <td className="p-3">{formatKg(b.declaredMassKg ?? b.grossWeightKg)}</td>
-                      <td className="p-3 font-bold text-emerald-700">
-                        {b.inspection ? formatKg(b.inspection.acceptedMassKg) : "Pending"}
+                      <td className="p-3 text-xs">
+                        {b.grossWeightKg
+                          ? `${formatKg(b.grossWeightKg)} (Verified)`
+                          : b.declaredMassKg
+                          ? `~${formatKg(b.declaredMassKg)} (Est)`
+                          : "Awaiting weighing"}
                       </td>
-                      <td className="p-3">
+                      <td className="p-3 font-bold text-emerald-700">
+                        {b.inspection ? formatKg(b.inspection.acceptedMassKg) : "Pending inspection"}
+                      </td>
+                      <td className="p-3 text-xs">
                         {b.inspection ? `${(100 - b.inspection.contaminationRate).toFixed(0)}% clean` : "Pending"}
                       </td>
                       <td className="p-3">

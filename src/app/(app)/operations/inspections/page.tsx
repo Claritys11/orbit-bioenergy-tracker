@@ -4,8 +4,14 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/services/authz";
 import { formatKg } from "@/lib/utils";
 
-export default async function InspectionsPage() {
+export default async function InspectionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ batchId?: string }>;
+}) {
   await requireUser("inspect_batch");
+  const { batchId } = await searchParams;
+
   const batches = await prisma.wasteBatch.findMany({
     where: { status: "DELIVERED" },
     include: { sourceOrganisation: true, container: true },
@@ -32,13 +38,16 @@ export default async function InspectionsPage() {
         title="Community Facility Inspection"
         description="Receive incoming organic waste, perform calibrated weighing, and remove contaminants. Accepted mass and contamination rates are calculated automatically."
       />
-      <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <Card>
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className="p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">Weigh & Inspect Load</h2>
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Weigh & Inspect Load</h2>
+              <p className="text-xs text-slate-500">Official calibrated measurement</p>
+            </div>
             <Badge tone="green">Community Facility</Badge>
           </div>
-          <InspectionForm batches={formattedBatches} />
+          <InspectionForm batches={formattedBatches} initialBatchId={batchId} />
         </Card>
 
         <Card>
