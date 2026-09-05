@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { inspectBatchFormAction } from "@/app/actions";
 import { AlertBanner, Badge, Button, Field, SelectField, TextareaField } from "@/components/ui";
-import { AlertCircle, CheckCircle2, Scale, XCircle } from "lucide-react";
+import { CheckCircle2, Scale } from "lucide-react";
 
 interface DeliveredBatch {
   id: string;
@@ -186,8 +186,8 @@ export function InspectionForm({
             >
               {decision}
             </span>
-            <span className="text-[10px] text-slate-400">
-              {decision === "ACCEPTED" ? "Feedstock pure" : decision === "CONDITIONAL" ? "8-30% penalty" : ">30% rejected"}
+            <span className="text-[10px] text-slate-500 font-medium">
+              {decision === "ACCEPTED" ? "< 8% Pure (Full Yield)" : decision === "CONDITIONAL" ? "8%–30% Quality Adjusted" : "≥ 30% Ineligible"}
             </span>
           </div>
         </div>

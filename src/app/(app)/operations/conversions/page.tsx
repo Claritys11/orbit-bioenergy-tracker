@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ConversionForm } from "@/components/conversion-form";
-import { Badge, Card, PageHeader } from "@/components/ui";
+import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/services/authz";
 import { formatGas } from "@/lib/utils";
@@ -64,7 +64,15 @@ export default async function ConversionsPage() {
             <h2 className="text-lg font-bold">Recent Conversion Cycles</h2>
             <span className="text-xs text-slate-500">{cycles.length} recorded</span>
           </div>
-          <div className="mt-4 grid gap-3">
+          {cycles.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="No conversion cycles recorded"
+                description="Completed biodigester runs and verified flow meter records will be listed here."
+              />
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-3">
             {cycles.map((cycle) => (
               <Link
                 key={cycle.id}
@@ -95,9 +103,10 @@ export default async function ConversionsPage() {
               </Link>
             ))}
           </div>
-        </Card>
-      </div>
+        )}
+      </Card>
     </div>
-  );
+  </div>
+);
 }
 

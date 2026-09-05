@@ -1,12 +1,13 @@
 import { env } from "@/lib/env";
 import { QrLabel } from "@/components/qr-label";
-import { Badge, Card, LinkButton, PageHeader } from "@/components/ui";
+import { AlertBanner, Badge, Card, LinkButton, PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/services/authz";
 import { formatGas, formatKg, humanise } from "@/lib/utils";
+import { ArrowLeft, CalendarCheck, Recycle } from "lucide-react";
 
 export default async function BatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  const user = await requireUser();
   const { id } = await params;
 
   const batch = await prisma.wasteBatch.findUniqueOrThrow({
@@ -35,15 +36,48 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="grid gap-6">
+      <div className="flex items-center gap-2">
+        {user.role === "CANTEEN_STAFF" ? (
+          <LinkButton href="/canteen/dashboard" variant="ghost" className="text-xs text-slate-500 hover:text-slate-900">
+            <ArrowLeft size={14} /> Back to Canteen Dashboard
+          </LinkButton>
+        ) : user.role === "SCHOOL_ADMIN" ? (
+          <LinkButton href="/school/dashboard" variant="ghost" className="text-xs text-slate-500 hover:text-slate-900">
+            <ArrowLeft size={14} /> Back to School Collection
+          </LinkButton>
+        ) : (
+          <LinkButton href="/batches" variant="ghost" className="text-xs text-slate-500 hover:text-slate-900">
+            <ArrowLeft size={14} /> Back to All Batches
+          </LinkButton>
+        )}
+      </div>
+
       <PageHeader
         title={batch.batchCode}
         description="Private operational detail with status history, inspection evidence, pickup data, and printable trace label."
         action={
-          <LinkButton href={`/trace/${batch.qrToken}`} variant="secondary">
-            Safe trace page
-          </LinkButton>
+          <div className="flex flex-wrap gap-2">
+            {user.role === "CANTEEN_STAFF" ? (
+              <LinkButton href="/batches/new">
+                <Recycle size={16} /> Register Another Container
+              </LinkButton>
+            ) : user.role === "SCHOOL_ADMIN" && batch.status === "READY_FOR_PICKUP" && !batch.pickupRequestItem ? (
+              <LinkButton href="/operations/pickups">
+                <CalendarCheck size={16} /> Request Pickup
+              </LinkButton>
+            ) : null}
+            <LinkButton href={`/trace/${batch.qrToken}`} variant="secondary">
+              Safe Trace Page
+            </LinkButton>
+          </div>
         }
       />
+
+      {batch.status === "READY_FOR_PICKUP" ? (
+        <AlertBanner tone="success" title="Container Marked Ready for Collection">
+          This organic load is sealed and stored at the school sorting bay. Official weighing will be conducted upon delivery to the community processing facility. Your School Administrator can now bundle this container into a collection pickup request.
+        </AlertBanner>
+      ) : null}
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <div className="grid gap-6">
           <Card>

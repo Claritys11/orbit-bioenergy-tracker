@@ -16,10 +16,11 @@ import {
   MobileCard,
   SelectField,
   StatusBadge,
+  SubmitButton,
   TextareaField,
 } from "@/components/ui";
-import { formatKg, humanise } from "@/lib/utils";
-import { CalendarCheck, CheckCircle2, Clock, MapPin, Truck, XCircle } from "lucide-react";
+import { formatKg } from "@/lib/utils";
+import { CheckCircle2, Clock, Truck } from "lucide-react";
 
 type PickupRequestData = {
   id: string;
@@ -67,7 +68,6 @@ export function OperatorPickupInbox({
 }) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [schedulingId, setSchedulingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [activeTab, setActiveTab] = useState<"NEW" | "SCHEDULED" | "TRANSIT" | "DELIVERED">("NEW");
@@ -347,7 +347,6 @@ export function OperatorPickupInbox({
                       <form
                         action={async (formData) => {
                           await schedulePickupLogisticsFormAction(formData);
-                          setSchedulingId(null);
                         }}
                         className="grid gap-3 sm:grid-cols-2"
                       >
@@ -373,81 +372,81 @@ export function OperatorPickupInbox({
                             defaultValue="Standard school morning collection route. Reusable containers will be delivered to TPS3R hub."
                           />
                         </div>
-                        <div className="sm:col-span-2 flex justify-end">
-                          <Button className="min-h-11 font-bold text-xs">
-                            <Truck size={16} /> Confirm Schedule & Assign Vehicle
-                          </Button>
-                        </div>
-                      </form>
-                    </div>
-                  ) : req.status === "SCHEDULED" ? (
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                      <p className="text-xs text-slate-500">
-                        Vehicle assigned. Ready to depart for {req.schoolOrganisation.name}.
-                      </p>
-                      <form action={confirmRequestDeliveryAction.bind(null, req.id, "IN_TRANSIT")}>
-                        <Button className="min-h-11 font-bold text-xs bg-indigo-700 hover:bg-indigo-800 text-white">
-                          <Truck size={16} /> Mark Vehicle In Transit
-                        </Button>
-                      </form>
-                    </div>
-                  ) : null}
-                </MobileCard>
-              ))}
-            </div>
-          )}
-        </Card>
-      ) : null}
-
-      {/* 3. IN TRANSIT TAB */}
-      {activeTab === "TRANSIT" ? (
-        <Card className="p-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="text-base font-bold text-slate-950">Vehicles Currently In Transit</h2>
-              <p className="text-xs text-slate-500">Upon arrival at the community processing hub, confirm delivery</p>
-            </div>
-          </div>
-
-          {transitRequests.length === 0 ? (
-            <EmptyState
-              title="No vehicles currently in transit"
-              description="When drivers depart school collection points, active loads will appear here."
-            />
-          ) : (
-            <div className="mt-4 grid gap-4">
-              {transitRequests.map((req) => (
-                <MobileCard key={req.id} className="border-2 border-purple-200 bg-purple-50/20 p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-900">{req.requestCode}</span>
-                        <Badge tone="purple">🚚 En Route to Hub</Badge>
+                          <div className="sm:col-span-2 flex justify-end">
+                            <SubmitButton pendingText="Assigning vehicle..." className="min-h-11 font-bold text-xs">
+                              <Truck size={16} /> Confirm Schedule & Assign Vehicle
+                            </SubmitButton>
+                          </div>
+                        </form>
                       </div>
-                      <h3 className="mt-1 text-lg font-bold text-slate-950">{req.schoolOrganisation.name}</h3>
-                      <p className="text-xs text-slate-500">Vehicle: {req.pickup?.vehicle?.label ?? "Logistics Van"} ({req.pickup?.vehicle?.plate ?? "D 2046 ORB"})</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-purple-900">{req.items.length} container load(s)</span>
-                    </div>
-                  </div>
+                    ) : req.status === "SCHEDULED" ? (
+                      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                        <p className="text-xs text-slate-500">
+                          Vehicle assigned. Ready to depart for {req.schoolOrganisation.name}.
+                        </p>
+                        <form action={confirmRequestDeliveryAction.bind(null, req.id, "IN_TRANSIT")}>
+                          <SubmitButton pendingText="Departing..." className="min-h-11 font-bold text-xs bg-indigo-700 hover:bg-indigo-800 text-white">
+                            <Truck size={16} /> Mark Vehicle In Transit
+                          </SubmitButton>
+                        </form>
+                      </div>
+                    ) : null}
+                  </MobileCard>
+                ))}
+              </div>
+            )}
+          </Card>
+        ) : null}
 
-                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-purple-100 pt-3">
-                    <p className="text-xs text-purple-950 font-medium">
-                      Standing at community hub? Confirm waste container drop-off:
-                    </p>
-                    <form action={confirmRequestDeliveryAction.bind(null, req.id, "DELIVERED")}>
-                      <Button className="min-h-11 font-black text-xs bg-[#00C972] text-black hover:bg-[#00C972]/90 shadow-md">
-                        <CheckCircle2 size={16} /> Confirm Delivery to Facility
-                      </Button>
-                    </form>
-                  </div>
-                </MobileCard>
-              ))}
+        {/* 3. IN TRANSIT TAB */}
+        {activeTab === "TRANSIT" ? (
+          <Card className="p-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-slate-950">Vehicles Currently In Transit</h2>
+                <p className="text-xs text-slate-500">Upon arrival at the community processing hub, confirm delivery</p>
+              </div>
             </div>
-          )}
-        </Card>
-      ) : null}
+
+            {transitRequests.length === 0 ? (
+              <EmptyState
+                title="No vehicles currently in transit"
+                description="When drivers depart school collection points, active loads will appear here."
+              />
+            ) : (
+              <div className="mt-4 grid gap-4">
+                {transitRequests.map((req) => (
+                  <MobileCard key={req.id} className="border-2 border-purple-200 bg-purple-50/20 p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-slate-900">{req.requestCode}</span>
+                          <Badge tone="purple">🚚 En Route to Hub</Badge>
+                        </div>
+                        <h3 className="mt-1 text-lg font-bold text-slate-950">{req.schoolOrganisation.name}</h3>
+                        <p className="text-xs text-slate-500">Vehicle: {req.pickup?.vehicle?.label ?? "Logistics Van"} ({req.pickup?.vehicle?.plate ?? "D 2046 ORB"})</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-purple-900">{req.items.length} container load(s)</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-purple-100 pt-3">
+                      <p className="text-xs text-purple-950 font-medium">
+                        Standing at community hub? Confirm waste container drop-off:
+                      </p>
+                      <form action={confirmRequestDeliveryAction.bind(null, req.id, "DELIVERED")}>
+                        <SubmitButton pendingText="Confirming drop-off..." className="min-h-11 font-black text-xs bg-[#00C972] text-black hover:bg-[#00C972]/90 shadow-md">
+                          <CheckCircle2 size={16} /> Confirm Delivery to Facility
+                        </SubmitButton>
+                      </form>
+                    </div>
+                  </MobileCard>
+                ))}
+              </div>
+            )}
+          </Card>
+        ) : null}
 
       {/* 4. DELIVERED TAB */}
       {activeTab === "DELIVERED" ? (

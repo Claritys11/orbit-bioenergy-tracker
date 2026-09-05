@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createConversionFormAction } from "@/app/actions";
-import { Button, Field, SelectField, TextareaField } from "@/components/ui";
+import { EmptyState, Field, LinkButton, SelectField, SubmitButton, TextareaField } from "@/components/ui";
 import { formatGas, formatKg } from "@/lib/utils";
 
 interface AcceptedBatch {
@@ -51,6 +51,20 @@ export function ConversionForm({
     setSelectedBatchIds([]);
   }
 
+  if (batches.length === 0) {
+    return (
+      <EmptyState
+        title="No feedstock batches available"
+        description="There are currently no accepted or conditionally passed feedstock batches awaiting conversion. Inspect incoming batches first or wait for driver deliveries."
+        action={
+          <LinkButton href="/operations/inspections">
+            Inspect Received Batches
+          </LinkButton>
+        }
+      />
+    );
+  }
+
   return (
     <form action={createConversionFormAction} className="mt-4 grid gap-4">
       <SelectField
@@ -87,41 +101,35 @@ export function ConversionForm({
           </div>
         </div>
 
-        {batches.length === 0 ? (
-          <p className="py-4 text-center text-xs text-slate-500">
-            No accepted/conditional inspected batches currently awaiting conversion.
-          </p>
-        ) : (
-          <div className="mt-2 max-h-52 overflow-y-auto divide-y divide-slate-100 pr-1">
-            {batches.map((batch) => {
-              const checked = selectedBatchIds.includes(batch.id);
-              return (
-                <label
-                  key={batch.id}
-                  className={`flex cursor-pointer items-center justify-between py-2 px-2 rounded text-xs transition-colors ${
-                    checked ? "bg-[var(--orbit-primary)]/8" : "hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="batchIds"
-                      value={batch.id}
-                      checked={checked}
-                      onChange={() => toggleBatch(batch.id)}
-                      className="rounded border-slate-300"
-                    />
-                    <span className="font-semibold text-slate-900">{batch.batchCode}</span>
-                    <span className="text-slate-500">({batch.sourceOrganisationName})</span>
-                  </div>
-                  <div className="font-medium text-slate-700">
-                    {formatKg(batch.acceptedMassKg)}
-                  </div>
-                </label>
-              );
-            })}
-          </div>
-        )}
+        <div className="mt-2 max-h-52 overflow-y-auto divide-y divide-slate-100 pr-1">
+          {batches.map((batch) => {
+            const checked = selectedBatchIds.includes(batch.id);
+            return (
+              <label
+                key={batch.id}
+                className={`flex cursor-pointer items-center justify-between py-2 px-2 rounded text-xs transition-colors ${
+                  checked ? "bg-[var(--orbit-primary)]/8" : "hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="batchIds"
+                    value={batch.id}
+                    checked={checked}
+                    onChange={() => toggleBatch(batch.id)}
+                    className="rounded border-slate-300"
+                  />
+                  <span className="font-semibold text-slate-900">{batch.batchCode}</span>
+                  <span className="text-slate-500">({batch.sourceOrganisationName})</span>
+                </div>
+                <div className="font-medium text-slate-700">
+                  {formatKg(batch.acceptedMassKg)}
+                </div>
+              </label>
+            );
+          })}
+        </div>
       </fieldset>
 
       {/* Input Summary & Three-Way Gas Comparison */}
@@ -243,9 +251,12 @@ export function ConversionForm({
         defaultValue="Verified conversion cycle recorded by Community Facility personnel."
       />
 
-      <Button disabled={selectedBatches.length === 0 || measuredGas === ""}>
+      <SubmitButton
+        disabled={selectedBatches.length === 0 || measuredGas === ""}
+        pendingText="Verifying output & allocating..."
+      >
         Verify Conversion Output & Generate Allocation
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

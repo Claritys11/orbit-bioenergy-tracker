@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+export { SubmitButton } from "@/components/submit-button";
+
 export function Button({
   children,
   className,
@@ -13,7 +15,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[var(--orbit-primary)] disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[var(--orbit-primary)] disabled:cursor-not-allowed disabled:opacity-60",
         variant === "primary" && "bg-[var(--orbit-primary)] text-white hover:bg-[var(--orbit-primary-dark)]",
         variant === "secondary" && "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50",
         variant === "ghost" && "text-slate-700 hover:bg-[var(--orbit-primary)]/8",
@@ -108,7 +110,7 @@ export function StatusBadge({ status }: { status: string }) {
     case "PICKUP_REQUESTED":
     case "PENDING_OPERATOR_RESPONSE":
     case "PENDING":
-      return <Badge tone="amber">⏳ Pending Response</Badge>;
+      return <Badge tone="amber">⏳ Awaiting Operator</Badge>;
     case "ACCEPTED":
       return <Badge tone="green">✓ Accepted</Badge>;
     case "SCHEDULED":
@@ -122,7 +124,7 @@ export function StatusBadge({ status }: { status: string }) {
       return <Badge tone="green">📦 Delivered</Badge>;
     case "UNDER_INSPECTION":
     case "AWAITING_INSPECTION":
-      return <Badge tone="amber">🔍 Awaiting Inspection</Badge>;
+      return <Badge tone="amber">🔍 Under Inspection</Badge>;
     case "CONDITIONAL":
       return <Badge tone="amber">⚠️ Conditional</Badge>;
     case "REJECTED":
@@ -353,8 +355,23 @@ export function Metric({
   hint?: string;
   confidence?: "Verified" | "Measured" | "Calculated" | "Estimated" | "Simulated Demo";
 }) {
-  const isUnmeasured = value === "0 kg" || value === 0 || value === "0.0 kg";
-  const displayValue = isUnmeasured && hint?.includes("unverified") ? "Pending verification" : String(value);
+  const isUnmeasured =
+    value === "0 kg" ||
+    value === 0 ||
+    value === "0.0 kg" ||
+    value === "0 m3" ||
+    value === "0.00 m3" ||
+    value === "0%" ||
+    value === "0.0%";
+  const shouldMask =
+    isUnmeasured &&
+    (hint?.toLowerCase().includes("unverified") ||
+      hint?.toLowerCase().includes("not yet") ||
+      hint?.toLowerCase().includes("pending") ||
+      hint?.toLowerCase().includes("calibrated") ||
+      hint?.toLowerCase().includes("measured at hub") ||
+      hint?.toLowerCase().includes("scale"));
+  const displayValue = shouldMask ? "Pending verification" : String(value);
 
   return (
     <Card className="flex flex-col justify-between">
@@ -376,7 +393,7 @@ export function Metric({
             </Badge>
           ) : null}
         </div>
-        <p className={cn("mt-2 text-2xl font-black tracking-tight", isUnmeasured && hint?.includes("unverified") ? "text-slate-400 text-lg" : "text-slate-950")}>
+        <p className={cn("mt-2 text-2xl font-black tracking-tight", shouldMask ? "text-slate-400 text-lg font-bold" : "text-slate-950")}>
           {displayValue}
         </p>
       </div>

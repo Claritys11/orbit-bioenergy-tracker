@@ -1,5 +1,5 @@
 import { InspectionForm } from "@/components/inspection-form";
-import { Badge, Card, PageHeader } from "@/components/ui";
+import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/services/authz";
 import { formatKg } from "@/lib/utils";
@@ -55,44 +55,53 @@ export default async function InspectionsPage({
             <h2 className="text-lg font-bold">Recent Verified Inspections</h2>
             <span className="text-xs text-slate-500">{recent.length} recent records</span>
           </div>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
-                <tr>
-                  <th className="py-2">Batch</th>
-                  <th>Decision</th>
-                  <th>Verified Gross</th>
-                  <th>Accepted</th>
-                  <th>Contamination</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {recent.map((inspection) => (
-                  <tr key={inspection.id}>
-                    <td className="py-3 font-semibold text-[var(--orbit-primary)]">
-                      {inspection.batch.batchCode}
-                    </td>
-                    <td>
-                      <Badge
-                        tone={
-                          inspection.decision === "REJECTED"
-                            ? "red"
-                            : inspection.decision === "CONDITIONAL"
-                            ? "amber"
-                            : "green"
-                        }
-                      >
-                        {inspection.decision}
-                      </Badge>
-                    </td>
-                    <td>{formatKg(inspection.verifiedGrossMassKg)}</td>
-                    <td className="font-semibold text-slate-900">{formatKg(inspection.acceptedMassKg)}</td>
-                    <td>{inspection.contaminationRate}%</td>
+          {recent.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="No recent inspections recorded"
+                description="Inspected waste loads and certified contamination reports will be archived here."
+              />
+            </div>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="py-2">Batch</th>
+                    <th>Decision</th>
+                    <th>Verified Gross</th>
+                    <th>Accepted</th>
+                    <th>Contamination</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {recent.map((inspection) => (
+                    <tr key={inspection.id}>
+                      <td className="py-3 font-semibold text-[var(--orbit-primary)]">
+                        {inspection.batch.batchCode}
+                      </td>
+                      <td>
+                        <Badge
+                          tone={
+                            inspection.decision === "REJECTED"
+                              ? "red"
+                              : inspection.decision === "CONDITIONAL"
+                              ? "amber"
+                              : "green"
+                          }
+                        >
+                          {inspection.decision}
+                        </Badge>
+                      </td>
+                      <td>{formatKg(inspection.verifiedGrossMassKg)}</td>
+                      <td className="font-semibold text-slate-900">{formatKg(inspection.acceptedMassKg)}</td>
+                      <td>{inspection.contaminationRate}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </div>
     </div>
